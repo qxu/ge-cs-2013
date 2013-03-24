@@ -85,7 +85,7 @@ public class MapPoint
 	
 	public int distanceTo(MapPoint dest)
 	{
-		return Math.abs(this.x - dest.x) + Math.abs(this.y + dest.y);
+		return Math.abs(this.x - dest.x) + Math.abs(this.y - dest.y);
 	}
 	
 	public Iterable<MapPoint> getNeighbors()

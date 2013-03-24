@@ -1,12 +1,9 @@
 package com.csc2013;
 
-import java.util.Comparator;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.SortedSet;
-import java.util.TreeSet;
+import java.util.Set;
 
 import com.csc2013.DungeonMaze.Action;
 import com.csc2013.DungeonMaze.BoxType;
@@ -131,55 +128,60 @@ public class PlayerMap
 	
 	/* Important stuff */
 	
-	private SortedSet<MapPoint> find(BoxType type)
+	private MapPoint findSingle(BoxType type)
 	{
-		final MapPoint player = getPlayerPoint();
-		SortedSet<MapPoint> keys = new TreeSet<>(new Comparator<MapPoint>()
-		{
-			@Override
-			public int compare(MapPoint p1, MapPoint p2)
-			{
-				int dist1 = player.distanceTo(p1);
-				int dist2 = player.distanceTo(p2);
-				return Integer.compare(dist1, dist2);
-			}
-		});
+		if(type == null)
+			return null;
+		
+		MapPoint found = null;
 		for(Entry<MapPoint, BoxType> entry : this.grid.entrySet())
 		{
 			if(entry.getValue() == type)
 			{
-				keys.add(entry.getKey());
+				if(found != null)
+					return null;
+				found = entry.getKey();
 			}
 		}
-		return keys;
-	}
-	
-	private MapPoint searchFor(BoxType type)
-	{
-		if(!this.grid.containsValue(type))
-			return null;
-		for(Entry<MapPoint, BoxType> e : this.grid.entrySet())
-		{
-			if(e.getValue() == type)
-				return e.getKey();
-		}
-		return null;
+		return found;
 	}
 	
 	public Action actionTo(BoxType type)
 	{
-		//		SortedSet<MapPoint> dests = find(type);
-		//		if(dests.isEmpty())
-		//			return null;
-		//		
-		//		List<MapPoint> path = AStarSearch.search(this, getPlayerPoint(), dests.first());
+		MapPoint aStarDest = findSingle(type);
 		
-		List<MapPoint> path = BFSearch.search(this, getPlayerPoint(), type);
-		if(path == null || path.isEmpty())
+		Set<MapPath> paths = aStarDest == null
+				? BFSearch.search(this, getPlayerPoint(), type)
+				: AStarSearch.search(this, getPlayerPoint(), aStarDest);
+		
+		if(paths.isEmpty())
 			return null;
 		
-		System.out.println(getPlayerPoint() + "-> " + path);
-		return getActionToNeighbor(path.get(0));
+		for(MapPath path : paths)
+		{
+			if(path.length() == 1)
+				return Action.Pickup;
+			Action move = getPathAction(path);
+			if(canExplore(move))
+				return move;
+		}
+		
+		return getPathAction(paths.iterator().next());
+	}
+	
+	private Action getPathAction(MapPath path)
+	{
+		final MapPoint player = getPlayerPoint();
+		final MapPoint point = path.getStepPath().getLastPoint();
+		if(player.west().equals(point))
+			return Action.West;
+		else if(player.east().equals(point))
+			return Action.East;
+		else if(player.north().equals(point))
+			return Action.North;
+		else if(player.south().equals(point))
+			return Action.South;
+		throw new AssertionError();
 	}
 	
 	private Action getActionToNeighbor(MapPoint point)
@@ -215,11 +217,7 @@ public class PlayerMap
 	{
 		if(canExplore(lastMove))
 			return lastMove;
-		
-		List<MapPoint> path = BFSearch.search(this, getPlayerPoint(), null);
-		if(path == null || path.isEmpty())
-			return null;
-		return getActionToNeighbor(path.get(0));
+		return actionTo(null);
 	}
 	
 	private boolean canExplore(Action move)

@@ -3,6 +3,8 @@ package com.csc2013;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.FontFormatException;
 import java.awt.Graphics;
 import java.awt.GraphicsEnvironment;
 import java.awt.Image;
@@ -13,6 +15,7 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
@@ -41,6 +44,8 @@ public class SchoolPlayerDebugger
 	private JPanel mapPanel;
 	
 	private Map<MapPoint, Color> markedPoints = new ConcurrentHashMap<>();
+	private Map<List<MapPoint>, Color> markedPaths = new ConcurrentHashMap<>();
+	private Map<MapPoint, String> stringMarks = new ConcurrentHashMap<>();
 	
 	public static void sleep(long millis)
 	{
@@ -54,7 +59,7 @@ public class SchoolPlayerDebugger
 		}
 	}
 	
-	public void mark(MapPoint point, Color color)
+	public void markPoint(MapPoint point, Color color)
 	{
 		if(color == null)
 		{
@@ -64,17 +69,52 @@ public class SchoolPlayerDebugger
 		update();
 	}
 	
-	public void unmark(MapPoint point)
+	public void unmarkPoint(MapPoint point)
 	{
 		this.markedPoints.remove(point);
 		update();
 	}
 	
-	public void unmarkAll()
+	public void unmarkAllPoints()
 	{
 		this.markedPoints.clear();
-		System.out.println(this.markedPoints.size());
 		update();
+	}
+	
+	public void markPath(MapPath path, Color color)
+	{
+		if(color == null)
+		{
+			color = Color.GRAY;
+		}
+		this.markedPaths.put(path.toList(), color);
+		update();
+	}
+	
+	public void unmarkPath(MapPath path)
+	{
+		this.markedPaths.remove(path.toList());
+		update();
+	}
+	
+	public void unmarkAllPaths()
+	{
+		this.markedPaths.clear();
+	}
+	
+	public void stringMark(MapPoint point, String text)
+	{
+		this.stringMarks.put(point, text);
+	}
+	
+	public void stringUnmark(MapPoint point)
+	{
+		this.stringMarks.remove(point);
+	}
+	
+	public void stringUnmarkAll()
+	{
+		this.stringMarks.clear();
 	}
 	
 	public SchoolPlayerDebugger(SchoolPlayer player, PlayerMap map)
@@ -99,8 +139,15 @@ public class SchoolPlayerDebugger
 	
 	public void update()
 	{
-		this.mapFrame.repaint();
-		this.mapFrame.pack();
+		SwingUtilities.invokeLater(new Runnable()
+		{
+			@Override
+			public void run()
+			{
+				SchoolPlayerDebugger.this.mapFrame.repaint();
+				SchoolPlayerDebugger.this.mapFrame.pack();
+			}
+		});
 		
 		if(finishedMap())
 		{
@@ -157,6 +204,22 @@ public class SchoolPlayerDebugger
 				}
 			}
 			
+			{
+				try
+				{
+					InputStream fontStream = SchoolPlayerDebugger.class
+							.getResourceAsStream("ProggyTinySZ.ttf");
+					Font font = Font.createFont(Font.PLAIN, fontStream)
+							.deriveFont(16F);
+					fontStream.close();
+					setFont(font);
+				}
+				catch(IOException | FontFormatException e)
+				{
+					e.printStackTrace();
+				}
+			}
+			
 			@Override
 			protected void paintComponent(Graphics g)
 			{
@@ -199,6 +262,25 @@ public class SchoolPlayerDebugger
 						-minY * tileHeight,
 						null);
 				
+				for(Entry<List<MapPoint>, Color> entry : SchoolPlayerDebugger.this.markedPaths
+						.entrySet())
+				{
+					List<MapPoint> path = entry.getKey();
+					g.setColor(entry.getValue());
+					int numOfPoints = path.size();
+					MapPoint prev = path.get(0);
+					for(int i = 1; i < numOfPoints; ++i)
+					{
+						MapPoint cur = path.get(i);
+						int x1 = (prev.x - minX) * tileWidth + tileWidth / 2;
+						int y1 = (prev.y - minY) * tileHeight + tileHeight / 2;
+						int x2 = (cur.x - minX) * tileWidth + tileWidth / 2;
+						int y2 = (cur.y - minY) * tileHeight + tileHeight / 2;
+						g.drawLine(x1, y1, x2, y2);
+						prev = cur;
+					}
+				}
+				
 				for(Entry<MapPoint, Color> entry : SchoolPlayerDebugger.this.markedPoints
 						.entrySet())
 				{
@@ -209,6 +291,17 @@ public class SchoolPlayerDebugger
 					int markHeight = tileHeight / 3;
 					g.setColor(entry.getValue());
 					g.fillRect(x, y, markWidth, markHeight);
+				}
+				
+				g.setColor(Color.BLACK);
+				for(Entry<MapPoint, String> entry : SchoolPlayerDebugger.this.stringMarks
+						.entrySet())
+				{
+					
+					MapPoint point = entry.getKey();
+					int x = (point.x - minX) * tileWidth + tileWidth / 16;
+					int y = (point.y - minY) * tileHeight + tileHeight / 2;
+					g.drawString(entry.getValue(), x, y);
 				}
 				
 				SchoolPlayerDebugger.this.mapFrame.pack();

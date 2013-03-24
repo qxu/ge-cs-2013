@@ -1,11 +1,10 @@
 package com.csc2013;
 
-import java.util.ArrayList;
+import java.awt.Color;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Queue;
@@ -15,48 +14,55 @@ import com.csc2013.DungeonMaze.BoxType;
 
 public class AStarSearch
 {
-	public static List<MapPoint> search(PlayerMap ref, MapPoint start,
+	public static Set<MapPath> search(PlayerMap ref, MapPoint start,
 			final MapPoint dest)
 	{
 		Map<MapPoint, Integer> gScores = new HashMap<>();
 		final Map<MapPoint, Integer> fScores = new HashMap<>();
-		Map<MapPoint, MapPoint> cameFrom = new HashMap<>();
 		
 		Set<MapPoint> closed = new HashSet<>();
-		Queue<MapPoint> open = new PriorityQueue<>(11,
-				new Comparator<MapPoint>()
+		Queue<MapPath> open = new PriorityQueue<>(11,
+				new Comparator<MapPath>()
 				{
 					@Override
-					public int compare(MapPoint p1, MapPoint p2)
+					public int compare(MapPath p1, MapPath p2)
 					{
-						return fScores.get(p1).compareTo(fScores.get(p2));
+						return fScores.get(p1.getLastPoint()).compareTo(
+								fScores.get(p2.getLastPoint()));
 					}
 				});
 		
-		open.add(start);
+		open.add(new MapPath(start));
 		gScores.put(start, 0);
 		fScores.put(start, start.distanceTo(dest));
 		
+		Set<MapPath> found = new HashSet<>();
 		while(!open.isEmpty())
 		{
-			MapPoint cur = open.remove();
+			MapPath cur = open.remove();
+			MapPoint curPoint = cur.getLastPoint();
 			
-			if(cur.equals(dest))
+			ref.getDebugger().markPoint(cur.getLastPoint(), Color.MAGENTA);
+			ref.getDebugger().markPath(cur, Color.DARK_GRAY);
+			
+			if(curPoint.equals(dest))
 			{
-				List<MapPoint> path = new ArrayList<>();
-				for(MapPoint point = cur; point != null && cameFrom
-						.containsKey(point); point = cameFrom.get(point))
-				{
-					path.add(0, point);
-				}
-				return path;
+				found.add(cur);
+				ref.getDebugger().markPoint(curPoint, Color.GREEN);
+				ref.getDebugger().markPath(cur, Color.GREEN);
+				SchoolPlayerDebugger.sleep(20);
+				
+				ref.getDebugger().unmarkAllPoints();
+				ref.getDebugger().unmarkAllPaths();
+				ref.getDebugger().stringUnmarkAll();
+				return found;
 			}
 			
-			closed.add(cur);
+			closed.add(curPoint);
 			
-			for(MapPoint neighbor : getNeighbors(ref, cur, dest))
+			for(MapPoint neighbor : getNeighbors(ref, cur.getLastPoint(), dest))
 			{
-				int tempG = gScores.get(cur) + distanceTo(ref, neighbor);
+				int tempG = gScores.get(curPoint) + distanceTo(ref, neighbor);
 				if(closed.contains(neighbor))
 				{
 					if(tempG >= gScores.get(neighbor))
@@ -64,18 +70,32 @@ public class AStarSearch
 						continue;
 					}
 				}
-				if(!open.contains(neighbor))
+				MapPath subPath = cur.subPath(neighbor);
+				if(!open.contains(subPath))
 				{
-					cameFrom.put(neighbor, cur);
 					gScores.put(neighbor, tempG);
 					int tempH = heuristicEstimate(ref, neighbor, dest);
 					fScores.put(neighbor, tempG + tempH);
-					open.add(neighbor);
+					open.add(subPath);
+					
+					ref.getDebugger().markPoint(neighbor, Color.PINK);
+					ref.getDebugger().stringMark(neighbor,
+							String.valueOf(tempG + tempH));
+					SchoolPlayerDebugger.sleep(5);
 				}
+			}
+			
+			if(!curPoint.equals(dest))
+			{
+				ref.getDebugger().unmarkPath(cur);
+				ref.getDebugger().markPoint(curPoint, Color.LIGHT_GRAY);
 			}
 		}
 		
-		return null;
+		ref.getDebugger().unmarkAllPoints();
+		ref.getDebugger().unmarkAllPaths();
+		ref.getDebugger().stringUnmarkAll();
+		return found;
 	}
 	
 	private static int heuristicEstimate(PlayerMap ref, MapPoint point,

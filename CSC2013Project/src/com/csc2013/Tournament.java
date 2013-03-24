@@ -27,7 +27,7 @@ public class Tournament
 	 * This is how many spaces ahead players can see. Acceptable values are 1
 	 * through 15.
 	 */
-	public final static int vision[] = {8};
+	public final static int vision[] = {2};
 	/*
 	 * Possible players are: PlayerType.AI PlayerType.School PlayerType.Human
 	 */
