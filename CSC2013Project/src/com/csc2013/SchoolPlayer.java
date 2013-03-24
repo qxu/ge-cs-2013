@@ -1,7 +1,5 @@
 package com.csc2013;
 
-import java.util.Set;
-
 import org.newdawn.slick.SlickException;
 
 import com.csc2013.DungeonMaze.Action;
@@ -34,12 +32,12 @@ public class SchoolPlayer
 	 */
 	public SchoolPlayer() throws SlickException
 	{
-		map = new PlayerMap();
+		this.map = new PlayerMap();
 		if(DEBUG)
 		{
-			this.debugger = new SchoolPlayerDebugger(this, map);
+			this.debugger = new SchoolPlayerDebugger(this, this.map);
 		}
-		map.setDebugger(debugger);
+		this.map.setDebugger(this.debugger);
 	}
 	
 	private AIPlayer aiPlayer = new AIPlayer();
@@ -60,10 +58,12 @@ public class SchoolPlayer
 	 */
 	public Action nextMove(PlayerVision vision, int keyCount, boolean lastAction)
 	{
-		if(lastMove == null)
+		if(this.lastMove == null)
+		{
 			lastAction = false;
+		}
 		
-		updateMap(vision, lastMove, lastAction);
+		updateMap(vision, this.lastMove, lastAction);
 		
 		Action move = getMove(vision, keyCount, lastAction);
 		
@@ -76,13 +76,17 @@ public class SchoolPlayer
 		//			throw new RuntimeException(e);
 		//		}
 		
-		if(vision.CurrentPoint.hasKey() != (map.getPlayer() == BoxType.Key))
+		if(vision.CurrentPoint.hasKey() != (this.map.getPlayer() == BoxType.Key))
 			throw new AssertionError("key not dectected");
 		
-		if(map.get(map.getPlayerPoint().execute(move)) == BoxType.Door)
+		if(this.map.get(this.map.getPlayerPoint().execute(move)) == BoxType.Door)
+		{
 			move = Action.Use;
-		if(map.getPlayer() == BoxType.Key)
+		}
+		if(this.map.getPlayer() == BoxType.Key)
+		{
 			move = Action.Pickup;
+		}
 		
 		this.lastMove = move;
 		return move;
@@ -90,46 +94,47 @@ public class SchoolPlayer
 	
 	private Action getMove(PlayerVision vision, int keyCount, boolean lastAction)
 	{
-		Action exitAction = map.actionTo(BoxType.Exit);
+		Action exitAction = this.map.actionTo(BoxType.Exit);
 		if(exitAction != null)
 			return exitAction;
 		
-		Action keyAction = map.actionTo(BoxType.Key);
+		Action keyAction = this.map.actionTo(BoxType.Key);
 		if(keyAction != null)
 			return keyAction;
 		
 		if(keyCount > 0)
 		{
-			Action doorAction = map.actionTo(BoxType.Door);
+			Action doorAction = this.map.actionTo(BoxType.Door);
 			if(doorAction != null)
 				return doorAction;
 		}
 		
-		Action coverSpaceAction = map.discoveryChannel(lastMove, keyCount);
+		Action coverSpaceAction = this.map.discoveryChannel(this.lastMove,
+				keyCount);
 		if(coverSpaceAction != null)
 			return coverSpaceAction;
 		
 		System.out.println("??");
-		return aiPlayer.nextMove(vision, keyCount, lastAction);
+		return this.aiPlayer.nextMove(vision, keyCount, lastAction);
 	}
 	
 	private void updateMap(PlayerVision vision, Action move, boolean lastAction)
 	{
 		if(lastAction)
 		{
-			switch(lastMove)
+			switch(this.lastMove)
 			{
 				case West:
-					--xposition;
+					--this.xposition;
 					break;
 				case East:
-					++xposition;
+					++this.xposition;
 					break;
 				case North:
-					--yposition;
+					--this.yposition;
 					break;
 				case South:
-					++yposition;
+					++this.yposition;
 					break;
 				case Pickup:
 				case Use:
@@ -142,8 +147,8 @@ public class SchoolPlayer
 		int topOffset = vision.mNorth;
 		int bottomOffset = vision.mSouth;
 		
-		int centerHoriz = xposition;
-		int centerVert = yposition;
+		int centerHoriz = this.xposition;
+		int centerVert = this.yposition;
 		
 		MapBox[] left = vision.West;
 		MapBox[] right = vision.East;
@@ -183,9 +188,13 @@ public class SchoolPlayer
 		
 		MapBox current = vision.CurrentPoint;
 		if(current.hasKey())
+		{
 			map.set(BoxType.Key, centerHoriz, centerVert);
+		}
 		else
+		{
 			map.set(BoxType.Open, centerHoriz, centerVert);
+		}
 		
 		map.set(current.West, centerHoriz - 1, centerVert);
 		map.set(current.East, centerHoriz + 1, centerVert);
@@ -196,7 +205,7 @@ public class SchoolPlayer
 		
 		if(DEBUG)
 		{
-			debugger.update();
+			this.debugger.update();
 		}
 	}
 }

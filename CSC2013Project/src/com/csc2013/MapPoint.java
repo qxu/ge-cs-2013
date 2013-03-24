@@ -43,22 +43,22 @@ public class MapPoint
 	
 	public MapPoint west()
 	{
-		return new MapPoint(x - 1, y);
+		return new MapPoint(this.x - 1, this.y);
 	}
 	
 	public MapPoint east()
 	{
-		return new MapPoint(x + 1, y);
+		return new MapPoint(this.x + 1, this.y);
 	}
 	
 	public MapPoint north()
 	{
-		return new MapPoint(x, y - 1);
+		return new MapPoint(this.x, this.y - 1);
 	}
 	
 	public MapPoint south()
 	{
-		return new MapPoint(x, y + 1);
+		return new MapPoint(this.x, this.y + 1);
 	}
 	
 	public MapPoint execute(Action move)
@@ -85,7 +85,7 @@ public class MapPoint
 	
 	public int distanceTo(MapPoint dest)
 	{
-		return Math.abs(x - dest.x) + Math.abs(y + dest.y);
+		return Math.abs(this.x - dest.x) + Math.abs(this.y + dest.y);
 	}
 	
 	public Iterable<MapPoint> getNeighbors()
@@ -96,7 +96,7 @@ public class MapPoint
 	@Override
 	public int hashCode()
 	{
-		return (31 * x) ^ y;
+		return (31 * this.x) ^ this.y;
 	}
 	
 	@Override
@@ -105,12 +105,12 @@ public class MapPoint
 		if(!(o instanceof MapPoint))
 			return false;
 		MapPoint point = (MapPoint)o;
-		return (x == point.x) && (y == point.y);
+		return (this.x == point.x) && (this.y == point.y);
 	}
 	
 	@Override
 	public String toString()
 	{
-		return "(" + x + ", " + y + ")";
+		return "(" + this.x + ", " + this.y + ")";
 	}
 }

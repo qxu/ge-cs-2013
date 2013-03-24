@@ -60,7 +60,9 @@ public class AStarSearch
 				if(closed.contains(neighbor))
 				{
 					if(tempG >= gScores.get(neighbor))
+					{
 						continue;
+					}
 				}
 				if(!open.contains(neighbor))
 				{

@@ -77,34 +77,35 @@ public class DungeonMaze extends BasicGame
 	}
 	
 	// Build GameContainer, limit FPS to 60, instantiate the map and player
+	@Override
 	public void init(GameContainer container) throws SlickException
 	{
 		// suppress Slick2Ds output
 		container.setVerbose(false);
 		
 		//set the vision each time init() is called
-		PlayerVision.distanceToView = Tournament.vision[visionTracker];
+		PlayerVision.distanceToView = Tournament.vision[this.visionTracker];
 		
 		// if all maps run through go back to first map				
-		if(mapTracker == Tournament.maps.length)
+		if(this.mapTracker == Tournament.maps.length)
 		{
-			personTracker++;
-			mapTracker = 0;
+			this.personTracker++;
+			this.mapTracker = 0;
 		}
-		this.mapName = Tournament.maps[mapTracker];
+		this.mapName = Tournament.maps[this.mapTracker];
 		// If all players are run through restart with the next set of vision
-		if(personTracker == Tournament.players.length)
+		if(this.personTracker == Tournament.players.length)
 		{
-			visionTracker++;
-			personTracker = 0;
+			this.visionTracker++;
+			this.personTracker = 0;
 			
-			if(visionTracker < Tournament.vision.length)
+			if(this.visionTracker < Tournament.vision.length)
 			{
-				PlayerVision.distanceToView = Tournament.vision[visionTracker];
+				PlayerVision.distanceToView = Tournament.vision[this.visionTracker];
 			}
 		}
 		
-		if(visionTracker == Tournament.vision.length)
+		if(this.visionTracker == Tournament.vision.length)
 		{ //END GAME
 			System.out.println();
 			System.out.println("****** FINAL RESULTS ******");
@@ -114,9 +115,9 @@ public class DungeonMaze extends BasicGame
 				System.out
 						.println("--- Results for Vision Distance Set at " + Tournament.vision[v] + " ---");
 				System.out.print("\t");
-				for(int i = 0; i < Tournament.maps.length; i++)
+				for(String map2 : Tournament.maps)
 				{
-					System.out.print(Tournament.maps[i] + "\t");
+					System.out.print(map2 + "\t");
 				}
 				System.out.print("\n");
 				for(int r = 0; r < Tournament.players.length; r++)
@@ -124,7 +125,7 @@ public class DungeonMaze extends BasicGame
 					System.out.print(Tournament.players[r] + "\t");
 					for(int c = 0; c < Tournament.maps.length; c++)
 					{
-						System.out.print(score[v][r][c] + "\t\t");
+						System.out.print(this.score[v][r][c] + "\t\t");
 					}
 					System.out.print("\n");
 				}
@@ -136,7 +137,7 @@ public class DungeonMaze extends BasicGame
 		else
 		{ // if (re)starting a game
 			//set the current player
-			this.curPlayer = Tournament.players[personTracker];
+			this.curPlayer = Tournament.players[this.personTracker];
 			
 			// set up rendering options
 			container.setVSync(true);
@@ -144,99 +145,101 @@ public class DungeonMaze extends BasicGame
 			container.setShowFPS(false);
 			
 			// set up map and player objects
-			map = new Map();
-			map.setMap(mapName);
-			player = new Player(map);
+			this.map = new Map();
+			this.map.setMap(this.mapName);
+			this.player = new Player(this.map);
 			
 			// Set players here
-			if(curPlayer == PlayerType.AI)
+			if(this.curPlayer == PlayerType.AI)
 			{
-				ai = new AIPlayer();
+				this.ai = new AIPlayer();
 			}
-			else if(curPlayer == PlayerType.School)
+			else if(this.curPlayer == PlayerType.School)
 			{
-				school = new SchoolPlayer();
+				this.school = new SchoolPlayer();
 			}
 			
 			// output for each run what the tournament settings are
 			System.out.println("-----");
 			System.out
 					.println("Starting a DungeonMaze run with the following settings:");
-			System.out.println("Map: " + Tournament.maps[mapTracker]);
-			System.out.println("Player: " + Tournament.players[personTracker]);
+			System.out.println("Map: " + Tournament.maps[this.mapTracker]);
 			System.out
-					.println("Vision distance: " + Tournament.vision[visionTracker]);
+					.println("Player: " + Tournament.players[this.personTracker]);
+			System.out
+					.println("Vision distance: " + Tournament.vision[this.visionTracker]);
 		}
 	}
 	
+	@Override
 	@SuppressWarnings("unused")
 	public void update(GameContainer container, int delta)
 	{
-		gameTime += delta;
-		if(playerMoveTime > 0)
+		this.gameTime += delta;
+		if(this.playerMoveTime > 0)
 		{
-			playerMoveTime -= delta;
+			this.playerMoveTime -= delta;
 		}
-		player.setMapBox();
+		this.player.setMapBox();
 		boolean show = true;
-		if(playerMoveTime <= 0 && gameRunning)
+		if(this.playerMoveTime <= 0 && this.gameRunning)
 		{
-			if(curPlayer == PlayerType.Human)
+			if(this.curPlayer == PlayerType.Human)
 			{
-				PlayerVision vision = new PlayerVision(map,
-						player.getPlayerGridLocation());
+				PlayerVision vision = new PlayerVision(this.map,
+						this.player.getPlayerGridLocation());
 				if(container.getInput().isKeyDown(Input.KEY_LEFT))
 				{
 					show = true;
-					lastAction = player.move(Action.West);
-					if(lastAction == true)
+					this.lastAction = this.player.move(Action.West);
+					if(this.lastAction == true)
 					{
-						steps++;
+						this.steps++;
 					}
 				}
 				else if(container.getInput().isKeyDown(Input.KEY_RIGHT))
 				{
 					show = true;
-					lastAction = player.move(Action.East);
-					if(lastAction == true)
+					this.lastAction = this.player.move(Action.East);
+					if(this.lastAction == true)
 					{
-						steps++;
+						this.steps++;
 					}
 				}
 				else if(container.getInput().isKeyDown(Input.KEY_UP))
 				{
 					show = true;
-					lastAction = player.move(Action.North);
-					if(lastAction == true)
+					this.lastAction = this.player.move(Action.North);
+					if(this.lastAction == true)
 					{
-						steps++;
+						this.steps++;
 					}
 				}
 				else if(container.getInput().isKeyDown(Input.KEY_DOWN))
 				{
 					show = true;
-					lastAction = player.move(Action.South);
-					if(lastAction == true)
+					this.lastAction = this.player.move(Action.South);
+					if(this.lastAction == true)
 					{
-						steps++;
+						this.steps++;
 					}
 				}
 				else if(container.getInput().isKeyDown(Input.KEY_SPACE))
 				{
 					show = true;
-					lastAction = player.move(Action.Pickup);
-					if(lastAction == true)
+					this.lastAction = this.player.move(Action.Pickup);
+					if(this.lastAction == true)
 					{
-						steps++;
+						this.steps++;
 					} /* printPlayerLoc(vision); */
 				}
 				else if(container.getInput().isKeyDown(Input.KEY_ENTER))
 				{
 					show = true;
-					lastAction = player.move(Action.Use);
-					if(lastAction == true)
+					this.lastAction = this.player.move(Action.Use);
+					if(this.lastAction == true)
 					{
-						steps++;
+						this.steps++;
 					} /* printPlayerVision(vision); */
 				}
 				else if(container.getInput().isKeyPressed(Input.KEY_ESCAPE))
@@ -248,49 +251,50 @@ public class DungeonMaze extends BasicGame
 					show = false;
 				}
 			}
-			else if(curPlayer == PlayerType.AI)
+			else if(this.curPlayer == PlayerType.AI)
 			{
-				PlayerVision vision = new PlayerVision(map,
-						player.getPlayerGridLocation());
-				lastAction = player.move(ai.nextMove(vision, player.getKeys(),
-						lastAction));
-				if(lastAction == true)
+				PlayerVision vision = new PlayerVision(this.map,
+						this.player.getPlayerGridLocation());
+				this.lastAction = this.player.move(this.ai.nextMove(vision,
+						this.player.getKeys(),
+						this.lastAction));
+				if(this.lastAction == true)
 				{
-					steps++;
+					this.steps++;
 				}
 			}
-			else if(curPlayer == PlayerType.School)
+			else if(this.curPlayer == PlayerType.School)
 			{
-				PlayerVision vision = new PlayerVision(map,
-						player.getPlayerGridLocation());
-				lastAction = player.move(school.nextMove(vision,
-						player.getKeys(), lastAction));
-				if(lastAction == true)
+				PlayerVision vision = new PlayerVision(this.map,
+						this.player.getPlayerGridLocation());
+				this.lastAction = this.player.move(this.school.nextMove(vision,
+						this.player.getKeys(), this.lastAction));
+				if(this.lastAction == true)
 				{
-					steps++;
+					this.steps++;
 				}
 			}
 			
-			if(player.end() || (steps >= Tournament.maxSteps))
+			if(this.player.end() || (this.steps >= Tournament.maxSteps))
 			{
-				if(steps >= Tournament.maxSteps)
+				if(this.steps >= Tournament.maxSteps)
 				{
 					System.out
 							.println("Failed to escape the dungeon and become Gollum :(");
 					// update scoreboard
-					score[visionTracker][personTracker][mapTracker] = -1;
+					this.score[this.visionTracker][this.personTracker][this.mapTracker] = -1;
 				}
 				else
 				{
 					System.out
-							.println("Escaped the dungeon in " + steps + " steps :)");
+							.println("Escaped the dungeon in " + this.steps + " steps :)");
 					// update scoreboard
-					score[visionTracker][personTracker][mapTracker] = steps;
+					this.score[this.visionTracker][this.personTracker][this.mapTracker] = this.steps;
 				}
 				
 				// restart the game
-				mapTracker++;
-				steps = 0;
+				this.mapTracker++;
+				this.steps = 0;
 				try
 				{
 					container.reinit();
@@ -301,7 +305,7 @@ public class DungeonMaze extends BasicGame
 					e.printStackTrace();
 				}
 			}
-			playerMoveTime = moveTime;
+			this.playerMoveTime = this.moveTime;
 		}
 	}
 	
@@ -398,11 +402,15 @@ public class DungeonMaze extends BasicGame
 	 * pixels y = (half of the screen height pixels) - the player's y position
 	 * on the grid * 16 pixels
 	 */
+	@Override
 	public void render(GameContainer container, Graphics g)
 	{
-		map.getMap().render(
-				320 - (int)((float)player.getPlayerGridLocation().getX() * 16),
-				240 - (int)((float)player.getPlayerGridLocation().getY() * 16));
-		g.drawAnimation(player.getPlayerAnimation(), (640 / 2), (480 / 2));
+		this.map.getMap()
+				.render(
+						320 - (int)((float)this.player.getPlayerGridLocation()
+								.getX() * 16),
+						240 - (int)((float)this.player.getPlayerGridLocation()
+								.getY() * 16));
+		g.drawAnimation(this.player.getPlayerAnimation(), (640 / 2), (480 / 2));
 	}
 }

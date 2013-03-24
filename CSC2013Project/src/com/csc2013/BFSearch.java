@@ -18,6 +18,9 @@ public class BFSearch
 	public static List<MapPoint> search(PlayerMap ref, MapPoint start,
 			BoxType dest)
 	{
+		if(dest != null && !ref.contains(dest))
+			return null;
+		
 		Queue<MapPoint> open = new ArrayDeque<>();
 		Set<MapPoint> closed = new HashSet<>();
 		Map<MapPoint, MapPoint> cameFrom = new HashMap<>();
@@ -26,15 +29,23 @@ public class BFSearch
 		
 		while(!open.isEmpty())
 		{
+			SchoolPlayerDebugger.sleep(20);
+			
 			MapPoint cur = open.remove();
+			ref.getDebugger().mark(cur, Color.BLUE);
+			
 			if(ref.get(cur) == dest)
 			{
+				ref.getDebugger().mark(cur, Color.GREEN);
 				List<MapPoint> path = new ArrayList<>();
 				for(MapPoint point = cur; point != null && cameFrom
 						.containsKey(point); point = cameFrom.get(point))
 				{
 					path.add(0, point);
 				}
+				
+				SchoolPlayerDebugger.sleep(200);
+				ref.getDebugger().unmarkAll();
 				return path;
 			}
 			closed.add(cur);
@@ -48,10 +59,12 @@ public class BFSearch
 				{
 					cameFrom.put(neighbor, cur);
 					open.add(neighbor);
+					ref.getDebugger().mark(neighbor, Color.RED);
 				}
 			}
 		}
-		return null;
+		ref.getDebugger().unmarkAll();
+		throw new AssertionError();
 	}
 	
 	private static Iterable<MapPoint> getNeighbors(PlayerMap ref,

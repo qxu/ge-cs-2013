@@ -40,13 +40,13 @@ public class PlayerMap
 	
 	public SchoolPlayerDebugger getDebugger()
 	{
-		return debugger;
+		return this.debugger;
 	}
 	
 	public void reset()
 	{
-		player = new MapPoint(0, 0);
-		grid = new HashMap<>();
+		this.player = new MapPoint(0, 0);
+		this.grid = new HashMap<>();
 	}
 	
 	public void setPlayerPosition(int x, int y)
@@ -56,9 +56,9 @@ public class PlayerMap
 	
 	public void setPlayerPosition(MapPoint point)
 	{
-		synchronized(lock)
+		synchronized(this.lock)
 		{
-			player = point;
+			this.player = point;
 		}
 	}
 	
@@ -69,14 +69,22 @@ public class PlayerMap
 	{
 		int x = point.x;
 		int y = point.y;
-		if(x < minX)
-			minX = x;
-		if(x > maxX)
-			maxX = x;
-		if(y < minY)
-			minY = y;
-		if(y > maxY)
-			maxY = y;
+		if(x < this.minX)
+		{
+			this.minX = x;
+		}
+		if(x > this.maxX)
+		{
+			this.maxX = x;
+		}
+		if(y < this.minY)
+		{
+			this.minY = y;
+		}
+		if(y > this.maxY)
+		{
+			this.maxY = y;
+		}
 	}
 	
 	public void set(BoxType type, int x, int y)
@@ -86,10 +94,10 @@ public class PlayerMap
 	
 	public void set(BoxType type, MapPoint point)
 	{
-		synchronized(lock)
+		synchronized(this.lock)
 		{
 			cacheBounds(point);
-			grid.put(point, type);
+			this.grid.put(point, type);
 		}
 	}
 	
@@ -100,9 +108,9 @@ public class PlayerMap
 	
 	public BoxType get(MapPoint point)
 	{
-		synchronized(lock)
+		synchronized(this.lock)
 		{
-			return grid.get(point);
+			return this.grid.get(point);
 		}
 	}
 	
@@ -113,7 +121,12 @@ public class PlayerMap
 	
 	public MapPoint getPlayerPoint()
 	{
-		return player;
+		return this.player;
+	}
+	
+	public boolean contains(BoxType type)
+	{
+		return this.grid.containsValue(type);
 	}
 	
 	/* Important stuff */
@@ -131,7 +144,7 @@ public class PlayerMap
 				return Integer.compare(dist1, dist2);
 			}
 		});
-		for(Entry<MapPoint, BoxType> entry : grid.entrySet())
+		for(Entry<MapPoint, BoxType> entry : this.grid.entrySet())
 		{
 			if(entry.getValue() == type)
 			{
@@ -143,9 +156,9 @@ public class PlayerMap
 	
 	private MapPoint searchFor(BoxType type)
 	{
-		if(!grid.containsValue(type))
+		if(!this.grid.containsValue(type))
 			return null;
-		for(Entry<MapPoint, BoxType> e : grid.entrySet())
+		for(Entry<MapPoint, BoxType> e : this.grid.entrySet())
 		{
 			if(e.getValue() == type)
 				return e.getKey();
@@ -163,9 +176,7 @@ public class PlayerMap
 		
 		List<MapPoint> path = BFSearch.search(this, getPlayerPoint(), type);
 		if(path == null || path.isEmpty())
-		{
 			return null;
-		}
 		
 		System.out.println(getPlayerPoint() + "-> " + path);
 		return getActionToNeighbor(path.get(0));
@@ -207,9 +218,7 @@ public class PlayerMap
 		
 		List<MapPoint> path = BFSearch.search(this, getPlayerPoint(), null);
 		if(path == null || path.isEmpty())
-		{
 			return null;
-		}
 		return getActionToNeighbor(path.get(0));
 	}
 	

@@ -2,8 +2,8 @@ package com.csc2013;
 
 import org.newdawn.slick.SlickException;
 
-import com.csc2013.DungeonMaze.BoxType;
 import com.csc2013.DungeonMaze.Action;
+import com.csc2013.DungeonMaze.BoxType;
 import com.csc2013.DungeonMaze.MoveType;
 
 public class AIPlayer
@@ -14,13 +14,13 @@ public class AIPlayer
 	
 	public AIPlayer() throws SlickException
 	{
-		lastDirection = Action.East;
-		nextMove = Action.East;
+		this.lastDirection = Action.East;
+		this.nextMove = Action.East;
 	}
 	
 	public String getName()
 	{
-		return name;
+		return this.name;
 	}
 	
 	/*
@@ -74,155 +74,151 @@ public class AIPlayer
 		 */
 		if(vision.CurrentPoint.South == BoxType.Exit)
 		{
-			nextMove = Action.South;
-			return nextMove;
+			this.nextMove = Action.South;
+			return this.nextMove;
 		}
 		if(vision.CurrentPoint.North == BoxType.Exit)
 		{
-			nextMove = Action.North;
-			return nextMove;
+			this.nextMove = Action.North;
+			return this.nextMove;
 		}
 		if(vision.CurrentPoint.West == BoxType.Exit)
 		{
-			nextMove = Action.West;
-			return nextMove;
+			this.nextMove = Action.West;
+			return this.nextMove;
 		}
 		if(vision.CurrentPoint.East == BoxType.Exit)
 		{
-			nextMove = Action.East;
-			return nextMove;
+			this.nextMove = Action.East;
+			return this.nextMove;
 		}
 		
 		if(vision.CurrentPoint.hasKey())
-		{
 			return Action.Pickup;
-		}
 		
 		if(vision.CurrentPoint.South == BoxType.Key)
 		{
-			nextMove = Action.South;
-			return nextMove;
+			this.nextMove = Action.South;
+			return this.nextMove;
 		}
 		if(vision.CurrentPoint.North == BoxType.Key)
 		{
-			nextMove = Action.North;
-			return nextMove;
+			this.nextMove = Action.North;
+			return this.nextMove;
 		}
 		if(vision.CurrentPoint.West == BoxType.Key)
 		{
-			nextMove = Action.West;
-			return nextMove;
+			this.nextMove = Action.West;
+			return this.nextMove;
 		}
 		if(vision.CurrentPoint.East == BoxType.Key)
 		{
-			nextMove = Action.East;
-			return nextMove;
+			this.nextMove = Action.East;
+			return this.nextMove;
 		}
 		
 		if(keyCount > 0)
 		{
 			if(vision.CurrentPoint.South == BoxType.Door || vision.CurrentPoint.North == BoxType.Door || vision.CurrentPoint.East == BoxType.Door || vision.CurrentPoint.West == BoxType.Door)
-			{
 				return Action.Use;
-			}
 		}
 		
 		if(vision.CurrentPoint.SouthMove == MoveType.Open)
 		{
-			nextMove = Action.South;
+			this.nextMove = Action.South;
 		}
 		else if(vision.CurrentPoint.NorthMove == MoveType.Open)
 		{
-			nextMove = Action.North;
+			this.nextMove = Action.North;
 		}
 		else if(vision.CurrentPoint.WestMove == MoveType.Open)
 		{
-			nextMove = Action.West;
+			this.nextMove = Action.West;
 		}
 		else if(vision.CurrentPoint.EastMove == MoveType.Open)
 		{
-			nextMove = Action.East;
+			this.nextMove = Action.East;
 		}
 		
-		if(lastDirection == Action.North)
+		if(this.lastDirection == Action.North)
 		{
 			if(vision.CurrentPoint.North == BoxType.Open)
 			{
-				nextMove = Action.North;
+				this.nextMove = Action.North;
 			}
 			else if(vision.CurrentPoint.West == BoxType.Open)
 			{
-				nextMove = Action.West;
+				this.nextMove = Action.West;
 			}
 			else if(vision.CurrentPoint.East == BoxType.Open)
 			{
-				nextMove = Action.East;
+				this.nextMove = Action.East;
 			}
 			else if(vision.CurrentPoint.South == BoxType.Open)
 			{
-				nextMove = Action.South;
+				this.nextMove = Action.South;
 			}
 		}
-		if(lastDirection == Action.South)
+		if(this.lastDirection == Action.South)
 		{
 			if(vision.CurrentPoint.South == BoxType.Open)
 			{
-				nextMove = Action.South;
+				this.nextMove = Action.South;
 			}
 			else if(vision.CurrentPoint.West == BoxType.Open)
 			{
-				nextMove = Action.West;
+				this.nextMove = Action.West;
 			}
 			else if(vision.CurrentPoint.East == BoxType.Open)
 			{
-				nextMove = Action.East;
+				this.nextMove = Action.East;
 			}
 			else if(vision.CurrentPoint.North == BoxType.Open)
 			{
-				nextMove = Action.North;
+				this.nextMove = Action.North;
 			}
 		}
-		if(lastDirection == Action.East)
+		if(this.lastDirection == Action.East)
 		{
 			if(vision.CurrentPoint.East == BoxType.Open)
 			{
-				nextMove = Action.East;
+				this.nextMove = Action.East;
 			}
 			else if(vision.CurrentPoint.North == BoxType.Open)
 			{
-				nextMove = Action.North;
+				this.nextMove = Action.North;
 			}
 			else if(vision.CurrentPoint.South == BoxType.Open)
 			{
-				nextMove = Action.South;
+				this.nextMove = Action.South;
 			}
 			else if(vision.CurrentPoint.West == BoxType.Open)
 			{
-				nextMove = Action.West;
+				this.nextMove = Action.West;
 			}
 		}
-		if(lastDirection == Action.West)
+		if(this.lastDirection == Action.West)
 		{
 			if(vision.CurrentPoint.West == BoxType.Open)
 			{
-				nextMove = Action.West;
+				this.nextMove = Action.West;
 			}
 			else if(vision.CurrentPoint.South == BoxType.Open)
 			{
-				nextMove = Action.South;
+				this.nextMove = Action.South;
 			}
 			else if(vision.CurrentPoint.North == BoxType.Open)
 			{
-				nextMove = Action.North;
+				this.nextMove = Action.North;
 			}
 			else if(vision.CurrentPoint.East == BoxType.Open)
 			{
-				nextMove = Action.East;
+				this.nextMove = Action.East;
 			}
 		}
 		
-		lastDirection = nextMove;
+		this.lastDirection = this.nextMove;
 		
-		return nextMove;
+		return this.nextMove;
 	}
 }

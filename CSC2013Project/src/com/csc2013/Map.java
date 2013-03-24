@@ -1,6 +1,7 @@
 package com.csc2013;
 
 import java.awt.Point;
+
 import org.newdawn.slick.SlickException;
 import org.newdawn.slick.tiled.TiledMap;
 
@@ -17,16 +18,16 @@ public class Map
 	
 	public BoxType[][] getGrid()
 	{
-		return Grid;
+		return this.Grid;
 	}
 	
 	public void setMap(String mapName) throws SlickException
 	{
-		map = null;
+		this.map = null;
 		try
 		{
-			map = new TiledMap("res/" + mapName, true);
-			name = mapName;
+			this.map = new TiledMap("res/" + mapName, true);
+			this.name = mapName;
 			initMap();
 		}
 		catch(Exception e)
@@ -37,42 +38,43 @@ public class Map
 	
 	public String getMapName()
 	{
-		return name;
+		return this.name;
 	}
 	
 	private void initMap()
 	{
-		MapSize = new Point(map.getWidth(), map.getHeight());
+		this.MapSize = new Point(this.map.getWidth(), this.map.getHeight());
 		//System.out.print(MapSize.getX());
 		//System.out.print(MapSize.getY());
 		
-		MapBoxWidth = map.getTileHeight();
-		MapGrid = new MapBox[(int)MapSize.getX()][(int)MapSize.getY()];
-		Grid = new BoxType[(int)MapSize.getX()][(int)MapSize.getY()];
+		this.MapBoxWidth = this.map.getTileHeight();
+		MapGrid = new MapBox[(int)this.MapSize.getX()][(int)this.MapSize.getY()];
+		this.Grid = new BoxType[(int)this.MapSize.getX()][(int)this.MapSize
+				.getY()];
 		
 		// Get the index #s of each layer of the TMX map file.
 		// * we could probably write this as a loop to get every layer in the map
-		int collisionIndex = map.getLayerIndex("collision");
-		int keyIndex = map.getLayerIndex("key");
-		int doorIndex = map.getLayerIndex("door");
-		int endIndex = map.getLayerIndex("end");
+		int collisionIndex = this.map.getLayerIndex("collision");
+		int keyIndex = this.map.getLayerIndex("key");
+		int doorIndex = this.map.getLayerIndex("door");
+		int endIndex = this.map.getLayerIndex("end");
 		
-		for(int i = 0; i < (int)MapSize.getX(); i++)
+		for(int i = 0; i < (int)this.MapSize.getX(); i++)
 		{
-			for(int j = 0; j < (int)MapSize.getY(); j++)
+			for(int j = 0; j < (int)this.MapSize.getY(); j++)
 			{
 				BoxType curType = BoxType.Open;
 				
-				int tileID = map.getTileId(i, j, collisionIndex);
-				String property = map.getTileProperty(tileID, "collide",
+				int tileID = this.map.getTileId(i, j, collisionIndex);
+				String property = this.map.getTileProperty(tileID, "collide",
 						"false");
 				if(property.equals("true"))
 				{
 					curType = BoxType.Blocked;
 				}
 				
-				tileID = map.getTileId(i, j, keyIndex);
-				property = map.getTileProperty(tileID, "keyed", "false");
+				tileID = this.map.getTileId(i, j, keyIndex);
+				property = this.map.getTileProperty(tileID, "keyed", "false");
 				if(property.equals("true"))
 				{
 					curType = BoxType.Key;
@@ -82,8 +84,8 @@ public class Map
 					 */
 				}
 				
-				tileID = map.getTileId(i, j, doorIndex);
-				property = map.getTileProperty(tileID, "doored", "false");
+				tileID = this.map.getTileId(i, j, doorIndex);
+				property = this.map.getTileProperty(tileID, "doored", "false");
 				if(property.equals("true"))
 				{
 					curType = BoxType.Door;
@@ -93,8 +95,8 @@ public class Map
 					 */
 				}
 				
-				tileID = map.getTileId(i, j, endIndex);
-				property = map.getTileProperty(tileID, "ended", "false");
+				tileID = this.map.getTileId(i, j, endIndex);
+				property = this.map.getTileProperty(tileID, "ended", "false");
 				if(property.equals("true"))
 				{
 					curType = BoxType.Exit;
@@ -104,13 +106,13 @@ public class Map
 					 */
 				}
 				
-				Grid[i][j] = curType;
+				this.Grid[i][j] = curType;
 			}
 		}
 		
-		for(int i = 0; i < (int)MapSize.getX(); i++)
+		for(int i = 0; i < (int)this.MapSize.getX(); i++)
 		{
-			for(int j = 0; j < (int)MapSize.getY(); j++)
+			for(int j = 0; j < (int)this.MapSize.getY(); j++)
 			{
 				BoxType North = BoxType.Open;
 				BoxType South = BoxType.Open;
@@ -123,16 +125,16 @@ public class Map
 				}
 				else
 				{
-					West = Grid[i - 1][j];
+					West = this.Grid[i - 1][j];
 				}
 				
-				if(i == (int)MapSize.getX() - 1)
+				if(i == (int)this.MapSize.getX() - 1)
 				{
 					East = BoxType.Blocked;
 				}
 				else
 				{
-					East = Grid[i + 1][j];
+					East = this.Grid[i + 1][j];
 				}
 				
 				if(j == 0)
@@ -141,26 +143,26 @@ public class Map
 				}
 				else
 				{
-					North = Grid[i][j - 1];
+					North = this.Grid[i][j - 1];
 				}
 				
-				if(j == (int)MapSize.getY() - 1)
+				if(j == (int)this.MapSize.getY() - 1)
 				{
 					South = BoxType.Blocked;
 				}
 				else
 				{
-					South = Grid[i][j + 1];
+					South = this.Grid[i][j + 1];
 				}
 				
 				boolean consumable = false;
-				if(Grid[i][j] == BoxType.Key)
+				if(this.Grid[i][j] == BoxType.Key)
 				{
 					consumable = true;
 				}
 				
 				boolean end = false;
-				if(Grid[i][j] == BoxType.Exit)
+				if(this.Grid[i][j] == BoxType.Exit)
 				{
 					end = true;
 				}
@@ -180,7 +182,7 @@ public class Map
 	// Return the entire TMX map as a TiledMap
 	public TiledMap getMap()
 	{
-		return map;
+		return this.map;
 	}
 	
 	// Return the contents of a specific MapBox space
@@ -192,7 +194,7 @@ public class Map
 	// Returns the size of the overall map as X,Y coordinate
 	public Point getMapSize()
 	{
-		return MapSize;
+		return this.MapSize;
 	}
 	
 	public void pickup(Point playerLocation)
@@ -209,7 +211,7 @@ public class Map
 					WestBox.North, WestBox.South, BoxType.Open, WestBox.West,
 					WestBox.hasKey(), WestBox.isEnd());
 		}
-		if(playerLocation.getX() < MapSize.x)
+		if(playerLocation.getX() < this.MapSize.x)
 		{
 			MapBox EastBox = MapGrid[(int)playerLocation.getX() + 1][(int)playerLocation
 					.getY()];
@@ -225,7 +227,7 @@ public class Map
 					BoxType.Open, SouthBox.South, SouthBox.East, SouthBox.West,
 					SouthBox.hasKey(), SouthBox.isEnd());
 		}
-		if(playerLocation.getY() < MapSize.y)
+		if(playerLocation.getY() < this.MapSize.y)
 		{
 			MapBox NorthBox = MapGrid[(int)playerLocation.getX()][(int)playerLocation
 					.getY() - 1];
@@ -234,12 +236,13 @@ public class Map
 					NorthBox.hasKey(), NorthBox.isEnd());
 		}
 		
-		int tilesIndex = map.getLayerIndex("tiles");
+		int tilesIndex = this.map.getLayerIndex("tiles");
 		
-		int keyIndex = map.getLayerIndex("key");
-		int tileID = map.getTileId((int)playerLocation.getX(),
+		int keyIndex = this.map.getLayerIndex("key");
+		int tileID = this.map.getTileId((int)playerLocation.getX(),
 				(int)playerLocation.getY(), tilesIndex);
-		map.setTileId((int)playerLocation.getX(), (int)playerLocation.getY(),
+		this.map.setTileId((int)playerLocation.getX(),
+				(int)playerLocation.getY(),
 				keyIndex, tileID);
 	}
 	
@@ -271,10 +274,8 @@ public class Map
 			DoorLocation.y = (int)playerLocation.getY();
 		}
 		else
-		{ //no door, return false
 			//System.out.print("unlock failed\n");
 			return false;
-		}
 		
 		//MapBox Door = MapGrid[DoorLocation.x][DoorLocation.y];
 		
@@ -288,7 +289,7 @@ public class Map
 					WestBox.North, WestBox.South, BoxType.Open, WestBox.West,
 					WestBox.hasKey(), WestBox.isEnd());
 		}
-		if(DoorLocation.getX() < MapSize.x)
+		if(DoorLocation.getX() < this.MapSize.x)
 		{
 			MapBox EastBox = MapGrid[(int)DoorLocation.getX() + 1][(int)DoorLocation
 					.getY()];
@@ -296,7 +297,7 @@ public class Map
 					EastBox.North, EastBox.South, EastBox.East, BoxType.Open,
 					EastBox.hasKey(), EastBox.isEnd());
 		}
-		if(DoorLocation.getY() < MapSize.y)
+		if(DoorLocation.getY() < this.MapSize.y)
 		{
 			MapBox SouthBox = MapGrid[(int)DoorLocation.getX()][(int)DoorLocation
 					.getY() + 1];
@@ -315,12 +316,12 @@ public class Map
 		
 		//System.out.print("unlocked\n");
 		
-		int tilesIndex = map.getLayerIndex("tiles");
+		int tilesIndex = this.map.getLayerIndex("tiles");
 		
-		int doorIndex = map.getLayerIndex("door");
-		int tileID = map.getTileId((int)DoorLocation.getX(),
+		int doorIndex = this.map.getLayerIndex("door");
+		int tileID = this.map.getTileId((int)DoorLocation.getX(),
 				(int)DoorLocation.getY(), tilesIndex);
-		map.setTileId((int)DoorLocation.getX(), (int)DoorLocation.getY(),
+		this.map.setTileId((int)DoorLocation.getX(), (int)DoorLocation.getY(),
 				doorIndex, tileID);
 		return true;
 	}
@@ -328,6 +329,6 @@ public class Map
 	// Return the size of the MapBox
 	public int getMapBoxWidth()
 	{
-		return MapBoxWidth;
+		return this.MapBoxWidth;
 	}
 }

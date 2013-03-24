@@ -1,6 +1,7 @@
 package com.csc2013;
 
 import org.newdawn.slick.SlickException;
+
 import com.csc2013.DungeonMaze.BoxType;
 import com.csc2013.DungeonMaze.MoveType;
 
@@ -22,82 +23,82 @@ public class MapBox
 	
 	public MapBox() throws SlickException
 	{
-		North = BoxType.Open;
-		South = BoxType.Open;
-		East = BoxType.Open;
-		West = BoxType.Open;
+		this.North = BoxType.Open;
+		this.South = BoxType.Open;
+		this.East = BoxType.Open;
+		this.West = BoxType.Open;
 		
-		NorthMove = MoveType.Open;
-		SouthMove = MoveType.Open;
-		EastMove = MoveType.Open;
-		WestMove = MoveType.Open;
+		this.NorthMove = MoveType.Open;
+		this.SouthMove = MoveType.Open;
+		this.EastMove = MoveType.Open;
+		this.WestMove = MoveType.Open;
 		
-		hasConsumable = false;
-		isEnd = false;
+		this.hasConsumable = false;
+		this.isEnd = false;
 	}
 	
 	public MapBox(BoxType N, BoxType S, BoxType E, BoxType W,
 			boolean consumable, boolean end)
 	{
-		North = N;
-		South = S;
-		East = E;
-		West = W;
+		this.North = N;
+		this.South = S;
+		this.East = E;
+		this.West = W;
 		
 		if(N == BoxType.Open || N == BoxType.Key)
 		{
-			NorthMove = MoveType.Open;
+			this.NorthMove = MoveType.Open;
 		}
 		else
 		{
-			NorthMove = MoveType.Blocked;
+			this.NorthMove = MoveType.Blocked;
 		}
 		if(S == BoxType.Open || S == BoxType.Key)
 		{
-			SouthMove = MoveType.Open;
+			this.SouthMove = MoveType.Open;
 		}
 		else
 		{
-			SouthMove = MoveType.Blocked;
+			this.SouthMove = MoveType.Blocked;
 		}
 		if(E == BoxType.Open || E == BoxType.Key)
 		{
-			EastMove = MoveType.Open;
+			this.EastMove = MoveType.Open;
 		}
 		else
 		{
-			EastMove = MoveType.Blocked;
+			this.EastMove = MoveType.Blocked;
 		}
 		if(W == BoxType.Open || W == BoxType.Key)
 		{
-			WestMove = MoveType.Open;
+			this.WestMove = MoveType.Open;
 		}
 		else
 		{
-			WestMove = MoveType.Blocked;
+			this.WestMove = MoveType.Blocked;
 		}
 		
-		hasConsumable = consumable;
+		this.hasConsumable = consumable;
 		if(consumable)
 		{
-			ConsumableType = "hi";
+			this.ConsumableType = "hi";
 		}
-		isEnd = end;
+		this.isEnd = end;
 	}
 	
 	public boolean hasKey()
 	{
-		return hasConsumable;
+		return this.hasConsumable;
 	}
 	
 	public void consume()
 	{
-		hasConsumable = false;
+		this.hasConsumable = false;
 	}
 	
 	public boolean isEnd()
 	{
-		return isEnd;
+		return this.isEnd;
 	}
 	
 }

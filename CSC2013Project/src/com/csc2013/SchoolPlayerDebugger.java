@@ -13,9 +13,9 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
@@ -25,6 +25,7 @@ import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
+import javax.swing.WindowConstants;
 
 import com.csc2013.DungeonMaze.BoxType;
 
@@ -39,7 +40,7 @@ public class SchoolPlayerDebugger
 	private JFrame mapFrame;
 	private JPanel mapPanel;
 	
-	private Map<MapPoint, Color> markedPoints = new HashMap<>();
+	private Map<MapPoint, Color> markedPoints = new ConcurrentHashMap<>();
 	
 	public static void sleep(long millis)
 	{
@@ -56,14 +57,23 @@ public class SchoolPlayerDebugger
 	public void mark(MapPoint point, Color color)
 	{
 		if(color == null)
+		{
 			color = Color.GRAY;
-		markedPoints.put(point, color);
+		}
+		this.markedPoints.put(point, color);
 		update();
 	}
 	
 	public void unmark(MapPoint point)
 	{
-		markedPoints.remove(point);
+		this.markedPoints.remove(point);
+		update();
+	}
+	
+	public void unmarkAll()
+	{
+		this.markedPoints.clear();
+		System.out.println(this.markedPoints.size());
 		update();
 	}
 	
@@ -78,19 +88,19 @@ public class SchoolPlayerDebugger
 	
 	public boolean finishedMap()
 	{
-		MapPoint player = map.getPlayerPoint();
+		MapPoint player = this.map.getPlayerPoint();
 		
-		return (map.get(player) == BoxType.Exit)
-				|| (map.get(player.west()) == BoxType.Exit)
-				|| (map.get(player.east()) == BoxType.Exit)
-				|| (map.get(player.north()) == BoxType.Exit)
-				|| (map.get(player.south()) == BoxType.Exit);
+		return (this.map.get(player) == BoxType.Exit)
+				|| (this.map.get(player.west()) == BoxType.Exit)
+				|| (this.map.get(player.east()) == BoxType.Exit)
+				|| (this.map.get(player.north()) == BoxType.Exit)
+				|| (this.map.get(player.south()) == BoxType.Exit);
 	}
 	
 	public void update()
 	{
-		mapFrame.repaint();
-		mapFrame.pack();
+		this.mapFrame.repaint();
+		this.mapFrame.pack();
 		
 		if(finishedMap())
 		{
@@ -99,7 +109,7 @@ public class SchoolPlayerDebugger
 				@Override
 				public void run()
 				{
-					mapFrame.dispose();
+					SchoolPlayerDebugger.this.mapFrame.dispose();
 				}
 			});
 		}
@@ -111,39 +121,39 @@ public class SchoolPlayerDebugger
 		{
 			private final int scaleMethod = Image.SCALE_SMOOTH;
 			private final Image black = TileSprites.black.getScaledInstance(
-					tileWidth, tileHeight, scaleMethod);
+					tileWidth, tileHeight, this.scaleMethod);
 			private final Image lock = TileSprites.lock.getScaledInstance(
-					tileWidth, tileHeight, scaleMethod);
+					tileWidth, tileHeight, this.scaleMethod);
 			private final Image exit = TileSprites.exit.getScaledInstance(
-					tileWidth, tileHeight, scaleMethod);
+					tileWidth, tileHeight, this.scaleMethod);
 			private final Image key = TileSprites.key.getScaledInstance(
-					tileWidth, tileHeight, scaleMethod);
+					tileWidth, tileHeight, this.scaleMethod);
 			private final Image empty = TileSprites.empty.getScaledInstance(
-					tileWidth, tileHeight, scaleMethod);
+					tileWidth, tileHeight, this.scaleMethod);
 			private final Image question = TileSprites.question
-					.getScaledInstance(tileWidth, tileHeight, scaleMethod);
+					.getScaledInstance(tileWidth, tileHeight, this.scaleMethod);
 			private final Image location = TileSprites.location
-					.getScaledInstance(tileWidth, tileHeight, scaleMethod);
+					.getScaledInstance(tileWidth, tileHeight, this.scaleMethod);
 			
 			private Image getPaintImage(BoxType tile)
 			{
 				if(tile == null)
-					return question;
+					return this.question;
 				
 				switch(tile)
 				{
 					case Blocked:
-						return black;
+						return this.black;
 					case Door:
-						return lock;
+						return this.lock;
 					case Exit:
-						return exit;
+						return this.exit;
 					case Key:
-						return key;
+						return this.key;
 					case Open:
-						return empty;
+						return this.empty;
 					default:
-						return question;
+						return this.question;
 				}
 			}
 			
@@ -183,37 +193,40 @@ public class SchoolPlayerDebugger
 				
 				int playerScaledX = (player.x - minX) * tileWidth;
 				int playerScaledY = (player.y - minY) * tileHeight;
-				g.drawImage(location, playerScaledX, playerScaledY, null);
+				g.drawImage(this.location, playerScaledX, playerScaledY, null);
 				
-				g.drawImage(location, -minX * tileWidth, -minY * tileHeight,
+				g.drawImage(this.location, -minX * tileWidth,
+						-minY * tileHeight,
 						null);
 				
-				for(Entry<MapPoint, Color> entry : markedPoints.entrySet())
+				for(Entry<MapPoint, Color> entry : SchoolPlayerDebugger.this.markedPoints
+						.entrySet())
 				{
 					MapPoint point = entry.getKey();
 					int x = (point.x - minX) * tileWidth + tileWidth / 8;
 					int y = (point.y - minY) * tileHeight + tileHeight / 8;
-					int markWidth = tileWidth / 4;
-					int markHeight = tileHeight / 4;
+					int markWidth = tileWidth / 3;
+					int markHeight = tileHeight / 3;
 					g.setColor(entry.getValue());
 					g.fillRect(x, y, markWidth, markHeight);
 				}
 				
-				mapFrame.pack();
+				SchoolPlayerDebugger.this.mapFrame.pack();
 			}
 			
 			private static final long serialVersionUID = -8172988280995869457L;
 		};
 		
-		mapPanel.setForeground(Color.WHITE);
+		this.mapPanel.setForeground(Color.WHITE);
 		
-		mapFrame = new JFrame("DEBUG - player map");
-		mapFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-		mapFrame.add(mapPanel);
-		mapFrame.pack();
-		mapFrame.setFocusableWindowState(false);
-		mapFrame.setVisible(true);
-		mapFrame.setFocusableWindowState(true);
+		this.mapFrame = new JFrame("DEBUG - player map");
+		this.mapFrame
+				.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+		this.mapFrame.add(this.mapPanel);
+		this.mapFrame.pack();
+		this.mapFrame.setFocusableWindowState(false);
+		this.mapFrame.setVisible(true);
+		this.mapFrame.setFocusableWindowState(true);
 		
 		JFrame buttonsFrame = new JFrame("buttons");
 		buttonsFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);

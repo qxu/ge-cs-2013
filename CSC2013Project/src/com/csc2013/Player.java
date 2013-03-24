@@ -1,11 +1,13 @@
 package com.csc2013;
 
 import java.awt.Point;
+
 import org.newdawn.slick.Animation;
 import org.newdawn.slick.SlickException;
 import org.newdawn.slick.SpriteSheet;
-import com.csc2013.DungeonMaze.BoxType;
+
 import com.csc2013.DungeonMaze.Action;
+import com.csc2013.DungeonMaze.BoxType;
 
 public class Player
 {
@@ -22,18 +24,18 @@ public class Player
 		
 		// Load character graphics, run the sprite animations, and start the player
 		SpriteSheet sheet = new SpriteSheet("res/flashy.png", 16, 16);
-		player = new Animation();
-		player.setAutoUpdate(true);
+		this.player = new Animation();
+		this.player.setAutoUpdate(true);
 		
-		playerLocation = new Point(20, 14);
+		this.playerLocation = new Point(20, 14);
 		
-		currentMoves = map.getMapBox(playerLocation);
+		this.currentMoves = map.getMapBox(this.playerLocation);
 		
-		playerMap = map;
+		this.playerMap = map;
 		
 		for(int frame = 0; frame < 3; frame++)
 		{
-			player.addFrame(sheet.getSprite(frame, 0), 150);
+			this.player.addFrame(sheet.getSprite(frame, 0), 150);
 		}
 		
 	}
@@ -41,26 +43,26 @@ public class Player
 	// 
 	public void setMapBox()
 	{
-		currentMoves = playerMap.getMapBox(playerLocation);
+		this.currentMoves = this.playerMap.getMapBox(this.playerLocation);
 	}
 	
 	public Point getPlayerGridLocation()
 	{
-		return playerLocation;
+		return this.playerLocation;
 	}
 	
 	// Return player x,y coordinates
 	public Point getPlayerLocation()
 	{
-		Point pixelLoc = new Point((int)(playerLocation.getX() * 16),
-				(int)(playerLocation.getY() * 16));
+		Point pixelLoc = new Point((int)(this.playerLocation.getX() * 16),
+				(int)(this.playerLocation.getY() * 16));
 		return pixelLoc;
 	}
 	
 	// Return player animation
 	public Animation getPlayerAnimation()
 	{
-		return player;
+		return this.player;
 	}
 	
 	// Move method, checks for validity then moves if valid
@@ -89,47 +91,37 @@ public class Player
 		switch(action)
 		{
 			case North:
-				if(currentMoves.North == BoxType.Open || currentMoves.North == BoxType.Key || currentMoves.North == BoxType.Exit)
-				{
+				if(this.currentMoves.North == BoxType.Open || this.currentMoves.North == BoxType.Key || this.currentMoves.North == BoxType.Exit)
 					return true;
-				}
 				break;
 			case South:
-				if(currentMoves.South == BoxType.Open || currentMoves.South == BoxType.Key || currentMoves.South == BoxType.Exit)
-				{
+				if(this.currentMoves.South == BoxType.Open || this.currentMoves.South == BoxType.Key || this.currentMoves.South == BoxType.Exit)
 					return true;
-				}
 				break;
 			case East:
-				if(currentMoves.East == BoxType.Open || currentMoves.East == BoxType.Key || currentMoves.East == BoxType.Exit)
-				{
+				if(this.currentMoves.East == BoxType.Open || this.currentMoves.East == BoxType.Key || this.currentMoves.East == BoxType.Exit)
 					return true;
-				}
 				break;
 			case West:
-				if(currentMoves.West == BoxType.Open || currentMoves.West == BoxType.Key || currentMoves.West == BoxType.Exit)
-				{
+				if(this.currentMoves.West == BoxType.Open || this.currentMoves.West == BoxType.Key || this.currentMoves.West == BoxType.Exit)
 					return true;
-				}
 				break;
 			case Pickup:
-				if(currentMoves.hasKey())
+				if(this.currentMoves.hasKey())
 				{
-					keys++;
-					playerMap.pickup(playerLocation);
+					this.keys++;
+					this.playerMap.pickup(this.playerLocation);
 					//System.out.print("key pickup\n"); 
 					return true;
 				}
 				break;
 			case Use:
-				if(keys <= 0)
-				{
+				if(this.keys <= 0)
 					//System.out.print("no keys\n"); 
 					return false;
-				}
-				else if(playerMap.unlockDoor(playerLocation))
+				else if(this.playerMap.unlockDoor(this.playerLocation))
 				{
-					keys--;
+					this.keys--;
 					return true;
 				}
 				break;
@@ -142,7 +134,7 @@ public class Player
 	
 	public MapBox getCurrentMove()
 	{
-		return playerMap.getMapBox(playerLocation);
+		return this.playerMap.getMapBox(this.playerLocation);
 	}
 	
 	private void setPlayerLocation(Action action)
@@ -151,16 +143,16 @@ public class Player
 		switch(action)
 		{
 			case North:
-				playerLocation.y -= moveSize;
+				this.playerLocation.y -= this.moveSize;
 				break;
 			case South:
-				playerLocation.y += moveSize;
+				this.playerLocation.y += this.moveSize;
 				break;
 			case East:
-				playerLocation.x += moveSize;
+				this.playerLocation.x += this.moveSize;
 				break;
 			case West:
-				playerLocation.x -= moveSize;
+				this.playerLocation.x -= this.moveSize;
 				break;
 			default:
 				break;
@@ -170,15 +162,13 @@ public class Player
 	
 	public int getKeys()
 	{
-		return keys;
+		return this.keys;
 	}
 	
 	public boolean end()
 	{
-		if(currentMoves.isEnd())
-		{
+		if(this.currentMoves.isEnd())
 			return true;
-		}
 		return false;
 	}
 }
