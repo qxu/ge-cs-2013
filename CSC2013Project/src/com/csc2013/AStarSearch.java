@@ -50,7 +50,7 @@ public class AStarSearch
 				found.add(cur);
 				ref.getDebugger().markPoint(curPoint, Color.GREEN);
 				ref.getDebugger().markPath(cur, Color.GREEN);
-				SchoolPlayerDebugger.sleep(20);
+				ref.getDebugger().waitForMarks(20);
 				
 				ref.getDebugger().unmarkAllPoints();
 				ref.getDebugger().unmarkAllPaths();
@@ -60,28 +60,33 @@ public class AStarSearch
 			
 			closed.add(curPoint);
 			
-			for(MapPoint neighbor : getNeighbors(ref, cur.getLastPoint(), dest))
+			if(found.isEmpty())
 			{
-				int tempG = gScores.get(curPoint) + distanceTo(ref, neighbor);
-				if(closed.contains(neighbor))
+				for(MapPoint neighbor : getNeighbors(ref, cur.getLastPoint(),
+						dest))
 				{
-					if(tempG >= gScores.get(neighbor))
+					int gScore = gScores.get(curPoint) + distanceTo(ref,
+							neighbor);
+					if(closed.contains(neighbor))
 					{
-						continue;
+						if(gScore >= gScores.get(neighbor))
+						{
+							continue;
+						}
 					}
-				}
-				MapPath subPath = cur.subPath(neighbor);
-				if(!open.contains(subPath))
-				{
-					gScores.put(neighbor, tempG);
-					int tempH = heuristicEstimate(ref, neighbor, dest);
-					fScores.put(neighbor, tempG + tempH);
-					open.add(subPath);
-					
-					ref.getDebugger().markPoint(neighbor, Color.PINK);
-					ref.getDebugger().stringMark(neighbor,
-							String.valueOf(tempG + tempH));
-					SchoolPlayerDebugger.sleep(5);
+					MapPath subPath = cur.subPath(neighbor);
+					if(!open.contains(subPath))
+					{
+						gScores.put(neighbor, gScore);
+						int hScore = heuristicEstimate(ref, neighbor, dest);
+						fScores.put(neighbor, gScore + hScore);
+						open.add(subPath);
+						
+						ref.getDebugger().markPoint(neighbor, Color.PINK);
+						ref.getDebugger().stringMark(neighbor,
+								String.valueOf(gScore + hScore));
+						ref.getDebugger().waitForMarks(5);
+					}
 				}
 			}
 			

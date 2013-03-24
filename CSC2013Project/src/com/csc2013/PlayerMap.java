@@ -1,5 +1,6 @@
 package com.csc2013;
 
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -183,6 +184,8 @@ public class PlayerMap
 			return Action.North;
 		else if(player.south().equals(point))
 			return Action.South;
+		else if(player.equals(point))
+			return Action.Pickup;
 		throw new AssertionError();
 	}
 	
@@ -197,16 +200,27 @@ public class PlayerMap
 		if(paths.isEmpty())
 			return null;
 		
+		Set<Action> moves = EnumSet.noneOf(Action.class);
 		for(MapPath path : paths)
 		{
-			if(path.length() == 1)
-				return Action.Pickup;
-			Action move = getPathAction(path);
+			//			if(path.length() == 1)
+			//				return Action.Pickup;
+			//			Action move = getPathAction(path);
+			//			if(canExplore(move))
+			//				return move;
+			moves.add(getPathAction(path));
+		}
+		
+		for(Action move : moves)
+		{
 			if(canExplore(move))
 				return move;
 		}
 		
-		return getPathAction(paths.iterator().next());
+		if(moves.contains(lastMove))
+			return lastMove;
+		
+		return moves.iterator().next();
 	}
 	
 	private boolean canExplore(Action move)

@@ -14,8 +14,6 @@ import com.csc2013.DungeonMaze.BoxType;
  */
 public class SchoolPlayer
 {
-	static final boolean DEBUG = true;
-	
 	private PlayerMap map;
 	
 	private int xposition = 0;
@@ -33,10 +31,7 @@ public class SchoolPlayer
 	public SchoolPlayer() throws SlickException
 	{
 		this.map = new PlayerMap();
-		if(DEBUG)
-		{
-			this.debugger = new SchoolPlayerDebugger(this, this.map);
-		}
+		this.debugger = new SchoolPlayerDebugger(this, this.map);
 		this.map.setDebugger(this.debugger);
 	}
 	
@@ -203,9 +198,6 @@ public class SchoolPlayer
 		
 		map.setPlayerPosition(centerHoriz, centerVert);
 		
-		if(DEBUG)
-		{
-			this.debugger.update();
-		}
+		this.debugger.updateMap();
 	}
 }

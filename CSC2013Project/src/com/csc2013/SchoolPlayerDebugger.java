@@ -15,6 +15,7 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -34,6 +35,9 @@ import com.csc2013.DungeonMaze.BoxType;
 
 public class SchoolPlayerDebugger
 {
+	public static final boolean DEBUG_MAP = true;
+	public static final boolean DEBUG_MARKS = true;
+	
 	private static final int tileWidth = 16;
 	private static final int tileHeight = 16;
 	
@@ -47,7 +51,7 @@ public class SchoolPlayerDebugger
 	private Map<List<MapPoint>, Color> markedPaths = new ConcurrentHashMap<>();
 	private Map<MapPoint, String> stringMarks = new ConcurrentHashMap<>();
 	
-	public static void sleep(long millis)
+	public void sleep(long millis)
 	{
 		try
 		{
@@ -55,75 +59,118 @@ public class SchoolPlayerDebugger
 		}
 		catch(InterruptedException e)
 		{
-			Thread.currentThread().interrupt();
+			throw new RuntimeException(e);
 		}
 	}
 	
-	public void markPoint(MapPoint point, Color color)
+	public void waitForMarks(long millis)
 	{
-		if(color == null)
+		if(DEBUG_MARKS)
 		{
-			color = Color.GRAY;
+			if(millis > 0)
+			{
+				sleep(millis);
+			}
 		}
-		this.markedPoints.put(point, color);
-		update();
-	}
-	
-	public void unmarkPoint(MapPoint point)
-	{
-		this.markedPoints.remove(point);
-		update();
-	}
-	
-	public void unmarkAllPoints()
-	{
-		this.markedPoints.clear();
-		update();
-	}
-	
-	public void markPath(MapPath path, Color color)
-	{
-		if(color == null)
-		{
-			color = Color.GRAY;
-		}
-		this.markedPaths.put(path.toList(), color);
-		update();
-	}
-	
-	public void unmarkPath(MapPath path)
-	{
-		this.markedPaths.remove(path.toList());
-		update();
-	}
-	
-	public void unmarkAllPaths()
-	{
-		this.markedPaths.clear();
-	}
-	
-	public void stringMark(MapPoint point, String text)
-	{
-		this.stringMarks.put(point, text);
-	}
-	
-	public void stringUnmark(MapPoint point)
-	{
-		this.stringMarks.remove(point);
-	}
-	
-	public void stringUnmarkAll()
-	{
-		this.stringMarks.clear();
 	}
 	
 	public SchoolPlayerDebugger(SchoolPlayer player, PlayerMap map)
 	{
 		if(player == null)
 			throw new NullPointerException();
+		
 		this.player = player;
 		this.map = map;
-		initSwingComponents();
+		
+		if(DEBUG_MAP)
+		{
+			initSwingComponents();
+		}
+	}
+	
+	public void markPoint(MapPoint point, Color color)
+	{
+		if(DEBUG_MARKS)
+		{
+			if(color == null)
+			{
+				color = Color.GRAY;
+			}
+			this.markedPoints.put(point, color);
+			updateMarks();
+		}
+	}
+	
+	public void unmarkPoint(MapPoint point)
+	{
+		if(DEBUG_MARKS)
+		{
+			this.markedPoints.remove(point);
+			updateMarks();
+		}
+	}
+	
+	public void unmarkAllPoints()
+	{
+		if(DEBUG_MARKS)
+		{
+			this.markedPoints.clear();
+			updateMarks();
+		}
+	}
+	
+	public void markPath(MapPath path, Color color)
+	{
+		if(DEBUG_MARKS)
+		{
+			if(color == null)
+			{
+				color = Color.GRAY;
+			}
+			this.markedPaths.put(path.toList(), color);
+			updateMarks();
+		}
+	}
+	
+	public void unmarkPath(MapPath path)
+	{
+		if(DEBUG_MARKS)
+		{
+			this.markedPaths.remove(path.toList());
+			updateMarks();
+		}
+	}
+	
+	public void unmarkAllPaths()
+	{
+		if(DEBUG_MARKS)
+		{
+			this.markedPaths.clear();
+		}
+	}
+	
+	public void stringMark(MapPoint point, String text)
+	{
+		if(DEBUG_MARKS)
+		{
+			this.stringMarks.put(point, text);
+		}
+	}
+	
+	public void stringUnmark(MapPoint point)
+	{
+		if(DEBUG_MARKS)
+		{
+			this.stringMarks.remove(point);
+		}
+	}
+	
+	public void stringUnmarkAll()
+	{
+		if(DEBUG_MARKS)
+		{
+			this.stringMarks.clear();
+		}
 	}
 	
 	public boolean finishedMap()
@@ -137,28 +184,53 @@ public class SchoolPlayerDebugger
 				|| (this.map.get(player.south()) == BoxType.Exit);
 	}
 	
-	public void update()
+	public void updateMarks()
 	{
-		SwingUtilities.invokeLater(new Runnable()
-		{
-			@Override
-			public void run()
-			{
-				SchoolPlayerDebugger.this.mapFrame.repaint();
-				SchoolPlayerDebugger.this.mapFrame.pack();
-			}
-		});
-		
-		if(finishedMap())
+		if(DEBUG_MAP && DEBUG_MARKS)
 		{
 			SwingUtilities.invokeLater(new Runnable()
 			{
 				@Override
 				public void run()
 				{
-					SchoolPlayerDebugger.this.mapFrame.dispose();
+					SchoolPlayerDebugger.this.mapFrame.repaint();
+					SchoolPlayerDebugger.this.mapFrame.pack();
+					
+					if(finishedMap())
+					{
+						SchoolPlayerDebugger.this.mapFrame.dispose();
+					}
 				}
 			});
+		}
+	}
+	
+	public void updateMap()
+	{
+		if(DEBUG_MAP)
+		{
+			try
+			{
+				SwingUtilities.invokeAndWait(new Runnable()
+				{
+					
+					@Override
+					public void run()
+					{
+						SchoolPlayerDebugger.this.mapFrame.repaint();
+						SchoolPlayerDebugger.this.mapFrame.pack();
+						
+						if(finishedMap())
+						{
+							SchoolPlayerDebugger.this.mapFrame.dispose();
+						}
+					}
+				});
+			}
+			catch(InvocationTargetException | InterruptedException e)
+			{
+				throw new RuntimeException(e);
+			}
 		}
 	}
 	
@@ -262,46 +334,49 @@ public class SchoolPlayerDebugger
 						-minY * tileHeight,
 						null);
 				
-				for(Entry<List<MapPoint>, Color> entry : SchoolPlayerDebugger.this.markedPaths
-						.entrySet())
+				if(DEBUG_MARKS)
 				{
-					List<MapPoint> path = entry.getKey();
-					g.setColor(entry.getValue());
-					int numOfPoints = path.size();
-					MapPoint prev = path.get(0);
-					for(int i = 1; i < numOfPoints; ++i)
+					for(Entry<List<MapPoint>, Color> entry : SchoolPlayerDebugger.this.markedPaths
+							.entrySet())
 					{
-						MapPoint cur = path.get(i);
-						int x1 = (prev.x - minX) * tileWidth + tileWidth / 2;
-						int y1 = (prev.y - minY) * tileHeight + tileHeight / 2;
-						int x2 = (cur.x - minX) * tileWidth + tileWidth / 2;
-						int y2 = (cur.y - minY) * tileHeight + tileHeight / 2;
-						g.drawLine(x1, y1, x2, y2);
-						prev = cur;
+						List<MapPoint> path = entry.getKey();
+						g.setColor(entry.getValue());
+						int numOfPoints = path.size();
+						MapPoint prev = path.get(0);
+						for(int i = 1; i < numOfPoints; ++i)
+						{
+							MapPoint cur = path.get(i);
+							int x1 = (prev.x - minX) * tileWidth + tileWidth / 2;
+							int y1 = (prev.y - minY) * tileHeight + tileHeight / 2;
+							int x2 = (cur.x - minX) * tileWidth + tileWidth / 2;
+							int y2 = (cur.y - minY) * tileHeight + tileHeight / 2;
+							g.drawLine(x1, y1, x2, y2);
+							prev = cur;
+						}
 					}
-				}
-				
-				for(Entry<MapPoint, Color> entry : SchoolPlayerDebugger.this.markedPoints
-						.entrySet())
-				{
-					MapPoint point = entry.getKey();
-					int x = (point.x - minX) * tileWidth + tileWidth / 8;
-					int y = (point.y - minY) * tileHeight + tileHeight / 8;
-					int markWidth = tileWidth / 3;
-					int markHeight = tileHeight / 3;
-					g.setColor(entry.getValue());
-					g.fillRect(x, y, markWidth, markHeight);
-				}
-				
-				g.setColor(Color.BLACK);
-				for(Entry<MapPoint, String> entry : SchoolPlayerDebugger.this.stringMarks
-						.entrySet())
-				{
 					
-					MapPoint point = entry.getKey();
-					int x = (point.x - minX) * tileWidth + tileWidth / 16;
-					int y = (point.y - minY) * tileHeight + tileHeight / 2;
-					g.drawString(entry.getValue(), x, y);
+					for(Entry<MapPoint, Color> entry : SchoolPlayerDebugger.this.markedPoints
+							.entrySet())
+					{
+						MapPoint point = entry.getKey();
+						int x = (point.x - minX) * tileWidth + tileWidth / 8;
+						int y = (point.y - minY) * tileHeight + tileHeight / 8;
+						int markWidth = tileWidth / 3;
+						int markHeight = tileHeight / 3;
+						g.setColor(entry.getValue());
+						g.fillRect(x, y, markWidth, markHeight);
+					}
+					
+					g.setColor(Color.BLACK);
+					for(Entry<MapPoint, String> entry : SchoolPlayerDebugger.this.stringMarks
+							.entrySet())
+					{
+						
+						MapPoint point = entry.getKey();
+						int x = (point.x - minX) * tileWidth + tileWidth / 16;
+						int y = (point.y - minY) * tileHeight + tileHeight / 2;
+						g.drawString(entry.getValue(), x, y);
+					}
 				}
 				
 				SchoolPlayerDebugger.this.mapFrame.pack();

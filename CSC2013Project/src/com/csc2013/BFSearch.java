@@ -38,13 +38,12 @@ public class BFSearch
 			
 			if(ref.get(curPoint) == dest)
 			{
-				ref.getDebugger().markPoint(curPoint, Color.GREEN);
-				ref.getDebugger().markPath(cur, Color.GREEN);
-				SchoolPlayerDebugger.sleep(8);
-				
-				Integer g = curEntry.getValue();
-				if(foundG == null || g.compareTo(foundG) <= 0)
+				if(foundG == null || curEntry.getValue().compareTo(foundG) <= 0)
 				{
+					ref.getDebugger().markPoint(curPoint, Color.GREEN);
+					ref.getDebugger().markPath(cur, Color.GREEN);
+					ref.getDebugger().waitForMarks(20);
+					
 					found.add(cur);
 					foundG = curEntry.getValue();
 				}
@@ -65,10 +64,12 @@ public class BFSearch
 					MapPath subPath = cur.subPath(neighbor);
 					if(!open.containsValue(subPath))
 					{
-						open.put(subPath,
-								curEntry.getValue() + distanceTo(ref, neighbor));
+						int gScore = curEntry.getValue() + distanceTo(ref,
+								neighbor);
+						open.put(subPath, gScore);
+						
 						ref.getDebugger().markPoint(neighbor, Color.PINK);
-						SchoolPlayerDebugger.sleep(2);
+						ref.getDebugger().waitForMarks(0);
 					}
 				}
 			}
