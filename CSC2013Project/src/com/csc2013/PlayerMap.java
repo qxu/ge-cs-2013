@@ -1,6 +1,7 @@
 package com.csc2013;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -128,19 +129,17 @@ public class PlayerMap
 	
 	/* Important stuff */
 	
-	private MapPoint findSingle(BoxType type)
+	private Set<MapPoint> find(BoxType type)
 	{
 		if(type == null)
 			return null;
 		
-		MapPoint found = null;
+		Set<MapPoint> found = new HashSet<>();
 		for(Entry<MapPoint, BoxType> entry : this.grid.entrySet())
 		{
 			if(entry.getValue() == type)
 			{
-				if(found != null)
-					return null;
-				found = entry.getKey();
+				found.add(entry.getKey());
 			}
 		}
 		return found;
@@ -148,11 +147,14 @@ public class PlayerMap
 	
 	public Action actionTo(BoxType type)
 	{
-		MapPoint aStarDest = findSingle(type);
+		Set<MapPoint> destPoints = find(type);
+		if(destPoints.isEmpty())
+			return null;
 		
-		Set<MapPath> paths = aStarDest == null
-				? BFSearch.search(this, getPlayerPoint(), type)
-				: AStarSearch.search(this, getPlayerPoint(), aStarDest);
+		Set<MapPath> paths = (destPoints.size() == 1)
+				? AStarSearch.search(this, getPlayerPoint(), destPoints
+						.iterator().next())
+				: BFSearch.search(this, getPlayerPoint(), type, false);
 		
 		if(paths.isEmpty())
 			return null;
@@ -184,40 +186,27 @@ public class PlayerMap
 		throw new AssertionError();
 	}
 	
-	private Action getActionToNeighbor(MapPoint point)
-	{
-		final MapPoint player = getPlayerPoint();
-		if(player.west().equals(point))
-			return Action.West;
-		else if(player.east().equals(point))
-			return Action.East;
-		else if(player.north().equals(point))
-			return Action.North;
-		else if(player.south().equals(point))
-			return Action.South;
-		throw new AssertionError();
-		
-		//		int deltaX = point.x - player.x;
-		//		int deltaY = point.y - player.y;
-		//		assert (deltaX == 0) != (deltaY == 0);
-		//		if(deltaX == 0)
-		//		{
-		//			if(deltaY > 0)
-		//				return Action.South;
-		//			else
-		//				return Action.North;
-		//		}
-		//		else if(deltaX > 0)
-		//			return Action.East;
-		//		else
-		//			return Action.West;
-	}
-	
 	public Action discoveryChannel(Action lastMove, int keyCount)
 	{
 		if(canExplore(lastMove))
 			return lastMove;
-		return actionTo(null);
+		
+		Set<MapPath> paths = BFSearch.search(this, getPlayerPoint(), null,
+				keyCount > 0);
+		
+		if(paths.isEmpty())
+			return null;
+		
+		for(MapPath path : paths)
+		{
+			if(path.length() == 1)
+				return Action.Pickup;
+			Action move = getPathAction(path);
+			if(canExplore(move))
+				return move;
+		}
+		
+		return getPathAction(paths.iterator().next());
 	}
 	
 	private boolean canExplore(Action move)

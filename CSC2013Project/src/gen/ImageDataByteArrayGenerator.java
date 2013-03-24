@@ -10,6 +10,7 @@ import java.util.Arrays;
 
 import javax.imageio.ImageIO;
 import javax.swing.JFrame;
+import javax.swing.WindowConstants;
 
 public class ImageDataByteArrayGenerator
 {
@@ -42,7 +43,7 @@ public class ImageDataByteArrayGenerator
 	private static void showImage(Image image)
 	{
 		JFrame frame = new JFrame("test");
-		frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+		frame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 		frame.add(new JImagePanel(image));
 		frame.pack();
 		frame.setVisible(true);
@@ -76,9 +77,7 @@ public class ImageDataByteArrayGenerator
 	private static String wrap(String str, int wrapLength, String newLineStr)
 	{
 		if(str == null)
-		{
 			return null;
-		}
 		if(newLineStr == null)
 		{
 			newLineStr = System.getProperty("line.separator");

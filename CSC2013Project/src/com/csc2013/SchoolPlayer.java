@@ -102,12 +102,12 @@ public class SchoolPlayer
 		if(keyAction != null)
 			return keyAction;
 		
-		if(keyCount > 0)
-		{
-			Action doorAction = this.map.actionTo(BoxType.Door);
-			if(doorAction != null)
-				return doorAction;
-		}
+		//		if(keyCount > 0)
+		//		{
+		//			Action doorAction = this.map.actionTo(BoxType.Door);
+		//			if(doorAction != null)
+		//				return doorAction;
+		//		}
 		
 		Action coverSpaceAction = this.map.discoveryChannel(this.lastMove,
 				keyCount);

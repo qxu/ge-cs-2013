@@ -1,11 +1,13 @@
 package com.csc2013;
 
 import java.awt.Color;
-import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Queue;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import com.csc2013.DungeonMaze.BoxType;
@@ -13,21 +15,23 @@ import com.csc2013.DungeonMaze.BoxType;
 public class BFSearch
 {
 	public static Set<MapPath> search(PlayerMap ref, MapPoint start,
-			BoxType dest)
+			BoxType dest, boolean hasKey)
 	{
 		if(dest != null && !ref.contains(dest))
 			return Collections.emptySet();
 		
 		Set<MapPoint> closed = new HashSet<>();
-		Queue<MapPath> open = new ArrayDeque<>();
-		Queue<MapPath> next = new ArrayDeque<>();
+		Map<MapPath, Integer> open = new HashMap<>();
 		
-		open.add(new MapPath(start));
+		open.put(new MapPath(start), 0);
 		
 		Set<MapPath> found = new HashSet<>();
+		Integer foundG = null;
 		while(!open.isEmpty())
 		{
-			MapPath cur = open.remove();
+			Entry<MapPath, Integer> curEntry = getShortestPath(open);
+			MapPath cur = curEntry.getKey();
+			
 			MapPoint curPoint = cur.getLastPoint();
 			ref.getDebugger().markPoint(curPoint, Color.MAGENTA);
 			ref.getDebugger().markPath(cur, Color.DARK_GRAY);
@@ -37,32 +41,35 @@ public class BFSearch
 				ref.getDebugger().markPoint(curPoint, Color.GREEN);
 				ref.getDebugger().markPath(cur, Color.GREEN);
 				SchoolPlayerDebugger.sleep(8);
-				found.add(cur);
+				
+				Integer g = curEntry.getValue();
+				if(foundG == null || g.compareTo(foundG) <= 0)
+				{
+					found.add(cur);
+					foundG = curEntry.getValue();
+				}
 			}
 			
+			open.remove(cur);
 			closed.add(curPoint);
 			
 			if(found.isEmpty())
 			{
-				for(MapPoint neighbor : getNeighbors(ref, curPoint, dest))
+				for(MapPoint neighbor : getNeighbors(ref, curPoint, dest,
+						hasKey))
 				{
 					if(closed.contains(neighbor))
 					{
 						continue;
 					}
 					MapPath subPath = cur.subPath(neighbor);
-					if(!next.contains(subPath))
+					if(!open.containsValue(subPath))
 					{
-						next.add(subPath);
+						open.put(subPath,
+								curEntry.getValue() + distanceTo(ref, neighbor));
 						ref.getDebugger().markPoint(neighbor, Color.PINK);
 						SchoolPlayerDebugger.sleep(2);
 					}
-				}
-				
-				if(open.isEmpty())
-				{
-					open = next;
-					next = new ArrayDeque<>();
 				}
 			}
 			
@@ -78,13 +85,43 @@ public class BFSearch
 		return found;
 	}
 	
+	private static int distanceTo(PlayerMap ref, MapPoint point)
+	{
+		if(ref.get(point) == BoxType.Door)
+			return 2;
+		else
+			return 1;
+	}
+	
+	private static Entry<MapPath, Integer> getShortestPath(
+			Map<MapPath, Integer> map)
+	{
+		Iterator<Entry<MapPath, Integer>> iter = map.entrySet().iterator();
+		Entry<MapPath, Integer> minEntry = iter.next();
+		Integer min = minEntry.getValue();
+		while(iter.hasNext())
+		{
+			Entry<MapPath, Integer> nextEntry = iter.next();
+			Integer next = nextEntry.getValue();
+			if(next.compareTo(min) < 0)
+			{
+				minEntry = nextEntry;
+				min = next;
+			}
+		}
+		return minEntry;
+	}
+	
 	private static Iterable<MapPoint> getNeighbors(PlayerMap ref,
-			MapPoint point, BoxType dest)
+			MapPoint point, BoxType dest, boolean hasKey)
 	{
 		Collection<MapPoint> neighbors = new HashSet<>(4);
 		for(MapPoint neighbor : point.getNeighbors())
 		{
-			if(ref.get(neighbor) == dest || (ref.get(neighbor) == BoxType.Open))
+			BoxType type = ref.get(neighbor);
+			if(type == dest
+					|| (type == BoxType.Open)
+					|| (hasKey && type == BoxType.Door))
 			{
 				neighbors.add(neighbor);
 			}
