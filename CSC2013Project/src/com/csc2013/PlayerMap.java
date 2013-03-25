@@ -203,11 +203,6 @@ public class PlayerMap
 		Set<Action> moves = EnumSet.noneOf(Action.class);
 		for(MapPath path : paths)
 		{
-			//			if(path.length() == 1)
-			//				return Action.Pickup;
-			//			Action move = getPathAction(path);
-			//			if(canExplore(move))
-			//				return move;
 			moves.add(getPathAction(path));
 		}
 		
