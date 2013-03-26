@@ -8,6 +8,8 @@ public class MapPath
 	private final MapPath superPath;
 	private final MapPoint point;
 	private final int numOfPoints;
+	private final int keyCount;
+	private final int turnCount;
 	
 	public MapPath(MapPoint start)
 	{
@@ -16,19 +18,34 @@ public class MapPath
 		this.superPath = null;
 		this.point = start;
 		this.numOfPoints = 1;
+		this.keyCount = 0;
+		this.turnCount = 0;
 	}
 	
 	private MapPath(MapPath superPath, MapPoint point)
 	{
-		if(superPath == null || point == null)
-			throw new NullPointerException();
 		this.superPath = superPath;
 		this.point = point;
 		this.numOfPoints = superPath.numOfPoints + 1;
+		this.keyCount = superPath.keyCount;
+		if(superPath.length() == 1)
+		{
+			this.turnCount = superPath.turnCount;
+		}
+		else
+		{
+			MapPoint lastlast = superPath.superPath.getLastPoint();
+			MapPoint last = superPath.getLastPoint();
+			this.turnCount = (lastlast.actionTo(last) == last.actionTo(point))
+				? superPath.turnCount
+				: superPath.turnCount + 1;
+		}
 	}
 	
 	public MapPath subPath(MapPoint subPoint)
 	{
+		if(subPoint == null)
+			throw new NullPointerException();
 		return new MapPath(this, subPoint);
 	}
 	
@@ -40,6 +57,16 @@ public class MapPath
 	public int length()
 	{
 		return this.numOfPoints;
+	}
+	
+	public int getTurnCount()
+	{
+		return this.turnCount;
+	}
+	
+	public boolean isBasePath()
+	{
+		return length() == 1;
 	}
 	
 	public MapPath getStepPath()
@@ -87,9 +114,9 @@ public class MapPath
 			return false;
 		MapPath path = (MapPath)o;
 		int length = length();
-		if(length == 1)
-			return path.length() == length && getLastPoint().equals(
-					path.getLastPoint());
+		if(isBasePath())
+			return path.isBasePath()
+					&& getLastPoint().equals(path.getLastPoint());
 		else if(length == 2)
 			return path.length() == length
 					&& this.superPath.getLastPoint().equals(

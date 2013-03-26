@@ -20,27 +20,6 @@ public class MapPoint
 		this(point.x, point.y);
 	}
 	
-	//	public Action actionTo(MapPoint dest)
-	//	{
-	//		int xDiff = dest.x - x;
-	//		int yDiff = dest.y - y;
-	//		
-	//		if(xDiff >= 0)
-	//		{
-	//			if(yDiff >= 0)
-	//				return (xDiff >= yDiff) ? Action.East : Action.North;
-	//			else
-	//				return (xDiff >= yDiff) ? Action.East : Action.South;
-	//		}
-	//		else
-	//		{
-	//			if(yDiff >= 0)
-	//				return (xDiff >= yDiff) ? Action.West : Action.North;
-	//			else
-	//				return (xDiff >= yDiff) ? Action.West : Action.South;
-	//		}
-	//	}
-	
 	public MapPoint west()
 	{
 		return new MapPoint(this.x - 1, this.y);
@@ -59,6 +38,16 @@ public class MapPoint
 	public MapPoint south()
 	{
 		return new MapPoint(this.x, this.y + 1);
+	}
+	
+	public Action actionTo(MapPoint point)
+	{
+		int dx = point.x - this.x;
+		int dy = point.y - this.y;
+		
+		return (Math.abs(dx) > Math.abs(dy))
+			? ((dx > 0) ? Action.East : Action.West)
+			: ((dy > 0) ? Action.South : Action.North);
 	}
 	
 	public MapPoint execute(Action move)

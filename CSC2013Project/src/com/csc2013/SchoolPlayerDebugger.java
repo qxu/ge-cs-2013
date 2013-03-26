@@ -26,9 +26,12 @@ import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
+import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.WindowConstants;
 
 import com.csc2013.DungeonMaze.BoxType;
@@ -46,24 +49,36 @@ public class SchoolPlayerDebugger
 	
 	private JFrame mapFrame;
 	private JPanel mapPanel;
+	private JDialog buttonsFrame;
 	
 	private Map<MapPoint, Color> markedPoints = new ConcurrentHashMap<>();
 	private Map<List<MapPoint>, Color> markedPaths = new ConcurrentHashMap<>();
 	private Map<MapPoint, String> stringMarks = new ConcurrentHashMap<>();
 	
-	public void sleep(long millis)
+	private static volatile long millisWasted = 0;
+	
+	public static void sleep(double millis)
 	{
 		try
 		{
-			Thread.sleep(millis);
+			long stop = System.nanoTime() + (long)(millis * 1000000);
+			Thread.sleep((long)millis);
+			long stopTime = System.nanoTime();
+			if(millisWasted <= 0 && stopTime < stop)
+			{
+				Thread.sleep(1);
+				stopTime = System.nanoTime();
+			}
+			millisWasted += (stopTime - stop);
+			System.out.println(millisWasted / 1000000.0);
 		}
 		catch(InterruptedException e)
 		{
-			throw new RuntimeException(e);
 		}
+		
 	}
 	
-	public void waitForMarks(long millis)
+	public void waitForMarks(double millis)
 	{
 		if(DEBUG_MARKS)
 		{
@@ -236,6 +251,16 @@ public class SchoolPlayerDebugger
 	
 	private void initSwingComponents()
 	{
+		try
+		{
+			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+		}
+		catch(ClassNotFoundException | InstantiationException
+				| IllegalAccessException | UnsupportedLookAndFeelException e1)
+		{
+			// watermelons
+		}
+		
 		this.mapPanel = new JPanel()
 		{
 			private final int scaleMethod = Image.SCALE_SMOOTH;
@@ -396,8 +421,8 @@ public class SchoolPlayerDebugger
 		this.mapFrame.setVisible(true);
 		this.mapFrame.setFocusableWindowState(true);
 		
-		JFrame buttonsFrame = new JFrame("buttons");
-		buttonsFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		buttonsFrame = new JDialog(mapFrame, "buttons");
+		buttonsFrame.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
 		JPanel buttons = new JPanel();
 		buttons.setLayout(new BoxLayout(buttons, BoxLayout.PAGE_AXIS));
 		buttons.setBorder(BorderFactory.createLineBorder(new Color(255, 255,
@@ -411,11 +436,15 @@ public class SchoolPlayerDebugger
 				if(pause.getText().equals("pause"))
 				{
 					pause.setText("resume");
+					BFSearch.pause();
+					AStarSearch.pause();
 					Tournament.container.pause();
 				}
 				else
 				{
 					pause.setText("pause");
+					BFSearch.resume();
+					AStarSearch.resume();
 					Tournament.container.resume();
 				}
 			}

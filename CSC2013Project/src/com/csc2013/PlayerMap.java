@@ -162,7 +162,7 @@ public class PlayerMap
 		
 		for(MapPath path : paths)
 		{
-			if(path.length() == 1)
+			if(path.isBasePath())
 				return Action.Pickup;
 			Action move = getPathAction(path);
 			if(canExplore(move))
@@ -176,17 +176,9 @@ public class PlayerMap
 	{
 		final MapPoint player = getPlayerPoint();
 		final MapPoint point = path.getStepPath().getLastPoint();
-		if(player.west().equals(point))
-			return Action.West;
-		else if(player.east().equals(point))
-			return Action.East;
-		else if(player.north().equals(point))
-			return Action.North;
-		else if(player.south().equals(point))
-			return Action.South;
-		else if(player.equals(point))
+		if(player.equals(point))
 			return Action.Pickup;
-		throw new AssertionError();
+		return player.actionTo(point);
 	}
 	
 	public Action discoveryChannel(Action lastMove, int keyCount)

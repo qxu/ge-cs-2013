@@ -22,16 +22,16 @@ public class Tournament
 	/*
 	 * Possible maps to use are: map01.tmx map02.tmx map03.tmx
 	 */
-	public final static String maps[] = {"test07withkeys.tmx", "test07.1withkeys.tmx", "test07.11withkeys.tmx"};
+	public final static String maps[] = {"test01.tmx"};
 	/*
 	 * This is how many spaces ahead players can see. Acceptable values are 1
 	 * through 15.
 	 */
-	public final static int vision[] = {15};
+	public final static int vision[] = {8};
 	/*
 	 * Possible players are: PlayerType.AI PlayerType.School PlayerType.Human
 	 */
-	public final static PlayerType players[] = {PlayerType.School, PlayerType.AI};
+	public final static PlayerType players[] = {PlayerType.School};
 	
 	public static final AppGameContainer container;
 	static

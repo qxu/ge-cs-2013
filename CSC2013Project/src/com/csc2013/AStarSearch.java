@@ -14,6 +14,25 @@ import com.csc2013.DungeonMaze.BoxType;
 
 public class AStarSearch
 {
+	private static volatile boolean paused = false;
+
+	public static void pause()
+	{
+		paused = true;
+	}
+	
+	public static void resume()
+	{
+		paused = false;
+	}
+	
+	/*
+	 * All delays are in milliseconds.
+	 */
+	private static final double NEIGHBOR_SEARCH_DELAY = 0;
+	private static final double PATH_SEARCH_DELAY = 0.2;
+	private static final double FOUND_DEST_MARK_DELAY = 0;
+
 	public static Set<MapPath> search(PlayerMap ref, MapPoint start,
 			final MapPoint dest)
 	{
@@ -44,13 +63,14 @@ public class AStarSearch
 			
 			ref.getDebugger().markPoint(cur.getLastPoint(), Color.MAGENTA);
 			ref.getDebugger().markPath(cur, Color.DARK_GRAY);
+			ref.getDebugger().waitForMarks(PATH_SEARCH_DELAY);
 			
 			if(curPoint.equals(dest))
 			{
 				found.add(cur);
 				ref.getDebugger().markPoint(curPoint, Color.GREEN);
 				ref.getDebugger().markPath(cur, Color.GREEN);
-				ref.getDebugger().waitForMarks(20);
+				ref.getDebugger().waitForMarks(FOUND_DEST_MARK_DELAY);
 				
 				ref.getDebugger().unmarkAllPoints();
 				ref.getDebugger().unmarkAllPaths();
@@ -85,7 +105,7 @@ public class AStarSearch
 						ref.getDebugger().markPoint(neighbor, Color.PINK);
 						ref.getDebugger().stringMark(neighbor,
 								String.valueOf(gScore + hScore));
-						ref.getDebugger().waitForMarks(5);
+						ref.getDebugger().waitForMarks(NEIGHBOR_SEARCH_DELAY);
 					}
 				}
 			}
@@ -94,6 +114,14 @@ public class AStarSearch
 			{
 				ref.getDebugger().unmarkPath(cur);
 				ref.getDebugger().markPoint(curPoint, Color.LIGHT_GRAY);
+			}
+			
+			if(paused)
+			{
+				while(paused)
+				{
+					ref.getDebugger().sleep(200);
+				}
 			}
 		}
 		

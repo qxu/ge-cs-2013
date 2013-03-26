@@ -21,7 +21,6 @@ public class Player
 	
 	public Player(Map map) throws SlickException
 	{
-		
 		// Load character graphics, run the sprite animations, and start the player
 		SpriteSheet sheet = new SpriteSheet("res/flashy.png", 16, 16);
 		this.player = new Animation();
@@ -37,7 +36,6 @@ public class Player
 		{
 			this.player.addFrame(sheet.getSprite(frame, 0), 150);
 		}
-		
 	}
 	
 	// 
