@@ -5,6 +5,7 @@ import org.newdawn.slick.SlickException;
 import com.csc2013.DungeonMaze.Action;
 import com.csc2013.DungeonMaze.BoxType;
 
+
 /**
  * 
  * [To be completed by students]
@@ -65,15 +66,6 @@ public class SchoolPlayer
 		this.debugger.updateMap();
 		
 		Action move = getMove(vision, keyCount, lastAction);
-		
-		//		try
-		//		{
-		//			Thread.sleep(500);
-		//		}
-		//		catch(InterruptedException e)
-		//		{
-		//			throw new RuntimeException(e);
-		//		}
 		
 		if(vision.CurrentPoint.hasKey() != (this.map.getPlayerPoint().getType() == BoxType.Key))
 			throw new AssertionError("key not dectected");

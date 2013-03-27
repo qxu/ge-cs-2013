@@ -1,6 +1,5 @@
 package com.csc2013;
 
-public class Consumable
-{
-	
+public class Consumable {
+
 }

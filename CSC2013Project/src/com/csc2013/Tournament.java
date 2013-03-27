@@ -22,7 +22,7 @@ public class Tournament
 	/*
 	 * Possible maps to use are: map01.tmx map02.tmx map03.tmx
 	 */
-	public final static String maps[] = {"test12.tmx"};
+	public final static String maps[] = {"map01.tmx"};
 	/*
 	 * This is how many spaces ahead players can see. Acceptable values are 1
 	 * through 15.

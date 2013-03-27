@@ -11,6 +11,7 @@ import java.util.Set;
 import com.csc2013.DungeonMaze.Action;
 import com.csc2013.DungeonMaze.BoxType;
 
+
 public class PlayerMap
 {
 	private MapPoint player;
@@ -194,6 +195,7 @@ public class PlayerMap
 		if(moves.contains(lastMove))
 			return lastMove;
 		
+		System.out.println("not sure which o");
 		return moves.iterator().next();
 	}
 	
