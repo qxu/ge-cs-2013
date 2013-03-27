@@ -15,14 +15,19 @@ import com.csc2013.DungeonMaze.BoxType;
  */
 public class SchoolPlayer
 {
-	private PlayerMap map;
-	
 	private int xposition = 0;
 	private int yposition = 0;
 	
-	private SchoolPlayerDebugger debugger;
+	final PlayerMap map;
 	
 	private Action lastMove;
+	
+	private static SchoolPlayer latestInstance;
+	
+	public static SchoolPlayer getLatestInstance()
+	{
+		return latestInstance;
+	}
 	
 	/**
 	 * Constructor.
@@ -31,12 +36,9 @@ public class SchoolPlayer
 	 */
 	public SchoolPlayer() throws SlickException
 	{
+		latestInstance = this;
 		this.map = new PlayerMap();
-		this.debugger = new SchoolPlayerDebugger(this, this.map);
-		this.map.setDebugger(this.debugger);
 	}
-	
-	private AIPlayer aiPlayer = new AIPlayer();
 	
 	/**
 	 * To properly implement this class you simply must return an Action in the
@@ -61,7 +63,7 @@ public class SchoolPlayer
 
 		updateMap(vision, this.lastMove, lastAction);
 
-		this.debugger.updateMap();
+//		this.debugger.updateMap();
 		
 		Action move = getMove(vision, keyCount, lastAction);
 		
@@ -109,7 +111,7 @@ public class SchoolPlayer
 			return coverSpaceAction;
 		
 		System.out.println("??");
-		return this.aiPlayer.nextMove(vision, keyCount, lastAction);
+		throw new RuntimeException("don't know what to do");
 	}
 	
 	private void updateMap(PlayerVision vision, Action move, boolean lastAction)

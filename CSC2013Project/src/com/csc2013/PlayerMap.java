@@ -18,16 +18,7 @@ public class PlayerMap
 	private Map<MapPoint, MapPoint> grid;
 	private Map<BoxType, Set<MapPoint>> typeMap;
 	
-	/*
-	 * For use in debugger, allows the JFrame to properly display the map.
-	 * Otherwise, these variables serve no purpose.
-	 */
-	int minX;
-	int minY;
-	int maxX;
-	int maxY;
-	
-	private SchoolPlayerDebugger debugger;
+	final PlayerMapDebugger debugger = new PlayerMapDebugger(this);
 	
 	public PlayerMap()
 	{
@@ -40,12 +31,12 @@ public class PlayerMap
 		this.player = new MapPoint(0, 0);
 	}
 	
-	public void setDebugger(SchoolPlayerDebugger debug)
-	{
-		this.debugger = debug;
-	}
+//	public void setDebugger(SchoolPlayerDebugger debug)
+//	{
+//		this.debugger = debug;
+//	}
 	
-	public SchoolPlayerDebugger getDebugger()
+	public PlayerMapDebugger getDebugger()
 	{
 		return this.debugger;
 	}
@@ -69,31 +60,6 @@ public class PlayerMap
 	private MapPoint getLocalized(int x, int y)
 	{
 		return grid.get(new MapPoint(x, y));
-	}
-	
-	/*
-	 * For use in debugger, allows the JFrame to properly display the map.
-	 */
-	private void cacheBounds(MapPoint point)
-	{
-		int x = point.x;
-		int y = point.y;
-		if(x < this.minX)
-		{
-			this.minX = x;
-		}
-		if(x > this.maxX)
-		{
-			this.maxX = x;
-		}
-		if(y < this.minY)
-		{
-			this.minY = y;
-		}
-		if(y > this.maxY)
-		{
-			this.maxY = y;
-		}
 	}
 	
 	public MapPoint set(BoxType type, int x, int y)
@@ -297,8 +263,7 @@ public class PlayerMap
 				point.north = this;
 				this.south = point;
 			}
-			
-			cacheBounds(this);
+			debugger.updatePoint(this);
 		}
 		
 		void setType(BoxType type)
@@ -309,6 +274,7 @@ public class PlayerMap
 				typeMap.get(oldType).remove(this);
 				typeMap.get(type).add(this);
 				this.type = type;
+				debugger.updatePoint(this);
 			}
 		}
 		

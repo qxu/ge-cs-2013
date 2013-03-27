@@ -37,7 +37,7 @@ public class AStarSearch
 	@SuppressWarnings("unused")
 	public static MapPath search(MapPoint start, final MapPoint dest)
 	{
-		SchoolPlayerDebugger debugger = SchoolPlayerDebugger.getLatestInstance();
+		PlayerMapDebugger debugger = SchoolPlayer.getLatestInstance().map.debugger;
 		
 		Map<MapPoint, Integer> gScores = new HashMap<>();
 		final Map<MapPoint, Integer> fScores = new HashMap<>();

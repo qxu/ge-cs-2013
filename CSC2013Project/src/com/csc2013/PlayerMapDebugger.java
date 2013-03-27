@@ -12,7 +12,6 @@ import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
-import java.awt.image.FilteredImageSource;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -20,12 +19,11 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.ConcurrentModificationException;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
+import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import javax.imageio.ImageIO;
-import javax.swing.BorderFactory;
-import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JDialog;
@@ -34,12 +32,11 @@ import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
-import javax.swing.WindowConstants;
 
 import com.csc2013.DungeonMaze.BoxType;
 import com.csc2013.PlayerMap.MapPoint;
 
-public class SchoolPlayerDebugger
+public class PlayerMapDebugger
 {
 	public static final boolean DEBUG_MAP = true;
 	public static final boolean DEBUG_MARKS = true;
@@ -47,25 +44,17 @@ public class SchoolPlayerDebugger
 	private static final int tileWidth = 16;
 	private static final int tileHeight = 16;
 	
-	private SchoolPlayer player;
-	private PlayerMap map;
+	private final PlayerMap map;
 	
 	private JFrame mapFrame;
-	private JPanel mapPanel;
+	private MapDebugPanel mapPanel;
 	private JDialog buttonsFrame;
 	
 	private Map<MapPoint, Color> markedPoints = new ConcurrentHashMap<>();
 	private Map<List<MapPoint>, Color> markedPaths = new ConcurrentHashMap<>();
 	private Map<MapPoint, String> stringMarks = new ConcurrentHashMap<>();
 	
-	private static volatile long millisWasted = 0;
-	
-	private static volatile SchoolPlayerDebugger latestInstance;
-	
-	public static SchoolPlayerDebugger getLatestInstance()
-	{
-		return latestInstance;
-	}
+	private volatile long millisWasted = 0;
 	
 	public void sleep(double millis)
 	{
@@ -80,7 +69,7 @@ public class SchoolPlayerDebugger
 				stopTime = System.nanoTime();
 			}
 			millisWasted += (stopTime - stop);
-//			System.out.println(millisWasted / 1000000.0);
+//				System.out.println(millisWasted / 1000000.0);
 		}
 		catch(InterruptedException e)
 		{
@@ -99,15 +88,9 @@ public class SchoolPlayerDebugger
 		}
 	}
 	
-	public SchoolPlayerDebugger(SchoolPlayer player, PlayerMap map)
+	public PlayerMapDebugger(PlayerMap map)
 	{
-		if(player == null)
-			throw new NullPointerException();
-		
-		this.player = player;
 		this.map = map;
-		latestInstance = this;
-		
 		if(DEBUG_MAP)
 		{
 			initSwingComponents();
@@ -201,7 +184,7 @@ public class SchoolPlayerDebugger
 	
 	public boolean finishedMap()
 	{
-		MapPoint player = this.map.getPlayerPoint();
+		MapPoint player = map.getPlayerPoint();
 		
 		for(MapPoint point : player.getNeighbors())
 		{
@@ -220,19 +203,18 @@ public class SchoolPlayerDebugger
 				@Override
 				public void run()
 				{
-					SchoolPlayerDebugger.this.mapFrame.repaint();
-					SchoolPlayerDebugger.this.mapFrame.pack();
-					
-					if(finishedMap())
-					{
-						SchoolPlayerDebugger.this.mapFrame.dispose();
-					}
+					PlayerMapDebugger.this.mapFrame.repaint();
 				}
 			});
 		}
 	}
 	
-	public void updateMap()
+	public void updatePoint(MapPoint point)
+	{
+		this.mapPanel.addToQueue(point);
+	}
+	
+	public void repaintMap()
 	{
 		if(DEBUG_MAP)
 		{
@@ -244,12 +226,12 @@ public class SchoolPlayerDebugger
 					@Override
 					public void run()
 					{
-						SchoolPlayerDebugger.this.mapFrame.repaint();
-						SchoolPlayerDebugger.this.mapFrame.pack();
+						PlayerMapDebugger.this.mapFrame.repaint();
+						PlayerMapDebugger.this.mapFrame.pack();
 						
 						if(finishedMap())
 						{
-							SchoolPlayerDebugger.this.mapFrame.dispose();
+							PlayerMapDebugger.this.mapFrame.dispose();
 						}
 					}
 				});
@@ -273,174 +255,10 @@ public class SchoolPlayerDebugger
 			// watermelons
 		}
 		
-		this.mapPanel = new JPanel()
-		{
-			{
-				try
-				{
-					InputStream fontStream = SchoolPlayerDebugger.class
-							.getResourceAsStream("ProggyTinySZ.ttf");
-					Font font = Font.createFont(Font.PLAIN, fontStream)
-							.deriveFont(16F);
-					fontStream.close();
-					setFont(font);
-				}
-				catch(IOException | FontFormatException e)
-				{
-					e.printStackTrace();
-				}
-			}
-			
-			private Image getPaintImage(BoxType tile)
-			{
-				if(tile == null)
-					return TileSprites.unknown;
-				
-				switch(tile)
-				{
-					case Open:
-						return TileSprites.open;
-					case Blocked:
-						return TileSprites.blocked;
-					case Door:
-						return TileSprites.door;
-					case Exit:
-						return TileSprites.exit;
-					case Key:
-						return TileSprites.key;
-					default:
-						throw new AssertionError();
-				}
-			}
-			
-			@Override
-			protected void paintComponent(Graphics g)
-			{
-				boolean failedToPaint = true;
-				do
-				{
-					try
-					{
-						tryToPaint(g);
-						failedToPaint = false;
-					}
-					catch(ConcurrentModificationException e)
-					{
-						sleep(200);
-						continue;
-					}
-				}
-				while(failedToPaint);
-			}
-			
-			private void tryToPaint(Graphics g) throws ConcurrentModificationException
-			{
-				PlayerMap map = SchoolPlayerDebugger.this.map;
-				
-				int minX = map.minX;
-				int minY = map.minY;
-				int maxX = map.maxX;
-				int maxY = map.maxY;
-				
-				int lengthX = maxX - minX;
-				int lengthY = maxY - minY;
-				
-				int panelWidth = (lengthX + 1) * tileWidth;
-				int panelHeight = (lengthY + 1) * tileHeight;
-				Dimension size = new Dimension(panelWidth, panelHeight);
-				setPreferredSize(size);
-				setSize(size);
-				
-				BufferedImage img = new BufferedImage(panelWidth, panelHeight, BufferedImage.TYPE_INT_RGB);
-				img.createGraphics();
-				
-				for(int x = minX; x <= maxX; x++)
-				{
-					for(int y = minY; y <= maxY; y++)
-					{
-						Image paintImage = getPaintImage(null);
-						int scaledX = (x - minX) * tileWidth;
-						int scaledY = (y - minY) * tileHeight;
-						g.drawImage(paintImage, scaledX, scaledY, Color.WHITE, null);
-					}
-				}
-				
-				for(BoxType type : BoxType.values())
-				{
-					Image paintImage = getPaintImage(type);
-					for(MapPoint point : map.find(type))
-					{
-						int scaledX = (point.x - minX) * tileWidth;
-						int scaledY = (point.y - minY) * tileHeight;
-						g.fillRect(scaledX, scaledY, tileWidth, tileHeight);
-						g.drawImage(paintImage, scaledX, scaledY, Color.WHITE, null);
-					}
-				}
-				
-				MapPoint player = map.getPlayerPoint();
-				
-				int playerScaledX = (player.x - minX) * tileWidth;
-				int playerScaledY = (player.y - minY) * tileHeight;
-				g.drawImage(TileSprites.location, playerScaledX, playerScaledY, Color.WHITE, null);
-				g.drawImage(TileSprites.location, -minX * tileWidth, -minY * tileHeight, null);
-				
-				
-				if(DEBUG_MARKS)
-				{
-					for(Entry<List<MapPoint>, Color> entry : SchoolPlayerDebugger.this.markedPaths
-							.entrySet())
-					{
-						List<MapPoint> path = entry.getKey();
-						g.setColor(entry.getValue());
-						int numOfPoints = path.size();
-						MapPoint prev = path.get(0);
-						for(int i = 1; i < numOfPoints; ++i)
-						{
-							MapPoint cur = path.get(i);
-							int x1 = (prev.x - minX) * tileWidth + tileWidth / 2;
-							int y1 = (prev.y - minY) * tileHeight + tileHeight / 2;
-							int x2 = (cur.x - minX) * tileWidth + tileWidth / 2;
-							int y2 = (cur.y - minY) * tileHeight + tileHeight / 2;
-							g.drawLine(x1, y1, x2, y2);
-							prev = cur;
-						}
-					}
-					
-					for(Entry<MapPoint, Color> entry : SchoolPlayerDebugger.this.markedPoints
-							.entrySet())
-					{
-						MapPoint point = entry.getKey();
-						int x = (point.x - minX) * tileWidth + tileWidth / 8;
-						int y = (point.y - minY) * tileHeight + tileHeight / 8;
-						int markWidth = tileWidth / 3;
-						int markHeight = tileHeight / 3;
-						g.setColor(entry.getValue());
-						g.fillRect(x, y, markWidth, markHeight);
-					}
-					
-					g.setColor(Color.BLACK);
-					for(Entry<MapPoint, String> entry : SchoolPlayerDebugger.this.stringMarks
-							.entrySet())
-					{
-						
-						MapPoint point = entry.getKey();
-						int x = (point.x - minX) * tileWidth + tileWidth / 16;
-						int y = (point.y - minY) * tileHeight + tileHeight / 2;
-						g.drawString(entry.getValue(), x, y);
-					}
-				}
-				
-				SchoolPlayerDebugger.this.mapFrame.pack();
-			}
-			
-			private static final long serialVersionUID = -8172988280995869457L;
-		};
-		
-		this.mapPanel.setForeground(Color.WHITE);
+		this.mapPanel = new MapDebugPanel();
 		
 		this.mapFrame = new JFrame("DEBUG - player map");
-		this.mapFrame
-				.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+		this.mapFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		this.mapFrame.add(this.mapPanel);
 		this.mapFrame.pack();
 		this.mapFrame.setFocusableWindowState(false);
@@ -451,8 +269,6 @@ public class SchoolPlayerDebugger
 		buttonsFrame.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
 		JPanel buttons = new JPanel();
 		buttons.setLayout(new BoxLayout(buttons, BoxLayout.PAGE_AXIS));
-		buttons.setBorder(BorderFactory.createLineBorder(new Color(255, 255,
-				255, 0), 10));
 		final JButton pause = new JButton("pause");
 		pause.addActionListener(new ActionListener()
 		{
@@ -487,7 +303,6 @@ public class SchoolPlayerDebugger
 		});
 		terminate.setAlignmentX(Component.CENTER_ALIGNMENT);
 		buttons.add(pause);
-		buttons.add(Box.createVerticalStrut(10));
 		buttons.add(terminate);
 		buttonsFrame.add(buttons);
 		buttonsFrame.pack();
@@ -500,6 +315,196 @@ public class SchoolPlayerDebugger
 		buttonsFrame.setVisible(true);
 	}
 	
+	private class MapDebugPanel extends JPanel
+	{
+		private int minX = 0;
+		private int minY = 0;
+		private int maxX = 0;
+		private int maxY = 0;
+		
+		private Queue<MapPoint> updateQueue = new LinkedBlockingQueue<>();
+		
+		public MapDebugPanel()
+		{
+			super();
+			try
+			{
+				InputStream fontStream = PlayerMapDebugger.class
+						.getResourceAsStream("ProggyTinySZ.ttf");
+				Font font = Font.createFont(Font.PLAIN, fontStream)
+						.deriveFont(16F);
+				fontStream.close();
+				setFont(font);
+			}
+			catch(IOException | FontFormatException e)
+			{
+				e.printStackTrace();
+			}
+		}
+		
+		public void addToQueue(MapPoint update)
+		{
+			cacheBounds(update);
+			this.updateQueue.add(update);
+		}
+		
+		@Override
+		protected void paintComponent(Graphics g)
+		{
+			boolean failedToPaint = true;
+			do
+			{
+				try
+				{
+					updatePaint(g);
+					failedToPaint = false;
+				}
+				catch(ConcurrentModificationException e)
+				{
+					sleep(200);
+					continue;
+				}
+			}
+			while(failedToPaint);
+		}
+		
+		private void updatePaint(Graphics g) throws ConcurrentModificationException
+		{
+			PlayerMap map = PlayerMapDebugger.this.map;
+			
+			int lengthX = maxX - minX;
+			int lengthY = maxY - minY;
+			
+			int panelWidth = (lengthX + 1) * tileWidth;
+			int panelHeight = (lengthY + 1) * tileHeight;
+			Dimension size = new Dimension(panelWidth, panelHeight);
+			setPreferredSize(size);
+			setSize(size);
+			
+//				BufferedImage img = new BufferedImage(panelWidth, panelHeight, BufferedImage.TYPE_INT_RGB);
+//				img.createGraphics();
+			
+//				for(int x = minX; x <= maxX; x++)
+//				{
+//					for(int y = minY; y <= maxY; y++)
+//					{
+//						Image paintImage = getPaintImage(null);
+//						int scaledX = (x - minX) * tileWidth;
+//						int scaledY = (y - minY) * tileHeight;
+//						g.drawImage(paintImage, scaledX, scaledY, Color.WHITE, null);
+//					}
+//				}
+			
+			for(MapPoint point : updateQueue)
+			{
+				Image paintImage = getPaintImage(point.getType());
+				int scaledX = (point.x - minX) * tileWidth;
+				int scaledY = (point.y - minY) * tileHeight;
+				g.fillRect(scaledX, scaledY, tileWidth, tileHeight);
+				g.drawImage(paintImage, scaledX, scaledY, Color.WHITE, null);
+			}
+			
+			MapPoint player = map.getPlayerPoint();
+			
+			int playerScaledX = (player.x - minX) * tileWidth;
+			int playerScaledY = (player.y - minY) * tileHeight;
+			g.drawImage(TileSprites.location, playerScaledX, playerScaledY, Color.WHITE, null);
+			g.drawImage(TileSprites.location, -minX * tileWidth, -minY * tileHeight, null);
+			
+			
+			if(DEBUG_MARKS)
+			{
+				for(Map.Entry<List<MapPoint>, Color> entry : PlayerMapDebugger.this.markedPaths
+						.entrySet())
+				{
+					List<MapPoint> path = entry.getKey();
+					g.setColor(entry.getValue());
+					int numOfPoints = path.size();
+					MapPoint prev = path.get(0);
+					for(int i = 1; i < numOfPoints; ++i)
+					{
+						MapPoint cur = path.get(i);
+						int x1 = (prev.x - minX) * tileWidth + tileWidth / 2;
+						int y1 = (prev.y - minY) * tileHeight + tileHeight / 2;
+						int x2 = (cur.x - minX) * tileWidth + tileWidth / 2;
+						int y2 = (cur.y - minY) * tileHeight + tileHeight / 2;
+						g.drawLine(x1, y1, x2, y2);
+						prev = cur;
+					}
+				}
+				
+				for(Map.Entry<MapPoint, Color> entry : PlayerMapDebugger.this.markedPoints
+						.entrySet())
+				{
+					MapPoint point = entry.getKey();
+					int x = (point.x - minX) * tileWidth + tileWidth / 8;
+					int y = (point.y - minY) * tileHeight + tileHeight / 8;
+					int markWidth = tileWidth / 3;
+					int markHeight = tileHeight / 3;
+					g.setColor(entry.getValue());
+					g.fillRect(x, y, markWidth, markHeight);
+				}
+				
+				g.setColor(Color.BLACK);
+				for(Map.Entry<MapPoint, String> entry : PlayerMapDebugger.this.stringMarks
+						.entrySet())
+				{
+					
+					MapPoint point = entry.getKey();
+					int x = (point.x - minX) * tileWidth + tileWidth / 16;
+					int y = (point.y - minY) * tileHeight + tileHeight / 2;
+					g.drawString(entry.getValue(), x, y);
+				}
+			}
+			
+			PlayerMapDebugger.this.mapFrame.pack();
+		}
+		
+
+		private Image getPaintImage(BoxType tile)
+		{
+			if(tile == null)
+				return TileSprites.unknown;
+			
+			switch(tile)
+			{
+				case Open:
+					return TileSprites.open;
+				case Blocked:
+					return TileSprites.blocked;
+				case Door:
+					return TileSprites.door;
+				case Exit:
+					return TileSprites.exit;
+				case Key:
+					return TileSprites.key;
+				default:
+					throw new AssertionError();
+			}
+		}
+		
+		private void cacheBounds(MapPoint point)
+		{
+			int x = point.x;
+			int y = point.y;
+			if(x < this.minX)
+			{
+				this.minX = x;
+			}
+			if(x > this.maxX)
+			{
+				this.maxX = x;
+			}
+			if(y < this.minY)
+			{
+				this.minY = y;
+			}
+			if(y > this.maxY)
+			{
+				this.maxY = y;
+			}
+		}
+	}
 	private static class TileSprites
 	{
 		private static final Image open;

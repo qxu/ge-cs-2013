@@ -38,7 +38,7 @@ public class BFSearch
 	{
 //		if(dest != null && !ref.contains(dest))
 //			return Collections.emptySet();
-		SchoolPlayerDebugger debugger = SchoolPlayerDebugger.getLatestInstance();
+		PlayerMapDebugger debugger = SchoolPlayer.getLatestInstance().map.debugger;
 		
 		
 		Set<MapPoint> closed = new HashSet<>();
