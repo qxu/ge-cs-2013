@@ -12,16 +12,16 @@ import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
+import java.awt.image.FilteredImageSource;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ConcurrentModificationException;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
@@ -57,8 +57,6 @@ public class SchoolPlayerDebugger
 	private Map<MapPoint, Color> markedPoints = new ConcurrentHashMap<>();
 	private Map<List<MapPoint>, Color> markedPaths = new ConcurrentHashMap<>();
 	private Map<MapPoint, String> stringMarks = new ConcurrentHashMap<>();
-	
-	final Lock drawLock = new ReentrantLock();
 	
 	private static volatile long millisWasted = 0;
 	
@@ -277,21 +275,6 @@ public class SchoolPlayerDebugger
 		
 		this.mapPanel = new JPanel()
 		{
-			private final int scaleMethod = Image.SCALE_SMOOTH;
-			private final Image black = TileSprites.black.getScaledInstance(
-					tileWidth, tileHeight, this.scaleMethod);
-			private final Image lock = TileSprites.lock.getScaledInstance(
-					tileWidth, tileHeight, this.scaleMethod);
-			private final Image exit = TileSprites.exit.getScaledInstance(
-					tileWidth, tileHeight, this.scaleMethod);
-			private final Image key = TileSprites.key.getScaledInstance(
-					tileWidth, tileHeight, this.scaleMethod);
-			private final Image empty = TileSprites.empty.getScaledInstance(
-					tileWidth, tileHeight, this.scaleMethod);
-			private final Image question = TileSprites.question
-					.getScaledInstance(tileWidth, tileHeight, this.scaleMethod);
-			private final Image location = TileSprites.location
-					.getScaledInstance(tileWidth, tileHeight, this.scaleMethod);
 			{
 				try
 				{
@@ -311,32 +294,47 @@ public class SchoolPlayerDebugger
 			private Image getPaintImage(BoxType tile)
 			{
 				if(tile == null)
-					return this.question;
+					return TileSprites.unknown;
 				
 				switch(tile)
 				{
-					case Blocked:
-						return this.black;
-					case Door:
-						return this.lock;
-					case Exit:
-						return this.exit;
-					case Key:
-						return this.key;
 					case Open:
-						return this.empty;
+						return TileSprites.open;
+					case Blocked:
+						return TileSprites.blocked;
+					case Door:
+						return TileSprites.door;
+					case Exit:
+						return TileSprites.exit;
+					case Key:
+						return TileSprites.key;
 					default:
-						return this.question;
+						throw new AssertionError();
 				}
 			}
-			
-			private final BoxType[] types = BoxType.values();
 			
 			@Override
 			protected void paintComponent(Graphics g)
 			{
-				drawLock.lock();
-				
+				boolean failedToPaint = true;
+				do
+				{
+					try
+					{
+						tryToPaint(g);
+						failedToPaint = false;
+					}
+					catch(ConcurrentModificationException e)
+					{
+						sleep(200);
+						continue;
+					}
+				}
+				while(failedToPaint);
+			}
+			
+			private void tryToPaint(Graphics g) throws ConcurrentModificationException
+			{
 				PlayerMap map = SchoolPlayerDebugger.this.map;
 				
 				int minX = map.minX;
@@ -353,8 +351,9 @@ public class SchoolPlayerDebugger
 				setPreferredSize(size);
 				setSize(size);
 				
-//				g.fillRect(0, 0, panelWidth, panelHeight);
-
+				BufferedImage img = new BufferedImage(panelWidth, panelHeight, BufferedImage.TYPE_INT_RGB);
+				img.createGraphics();
+				
 				for(int x = minX; x <= maxX; x++)
 				{
 					for(int y = minY; y <= maxY; y++)
@@ -362,11 +361,11 @@ public class SchoolPlayerDebugger
 						Image paintImage = getPaintImage(null);
 						int scaledX = (x - minX) * tileWidth;
 						int scaledY = (y - minY) * tileHeight;
-						g.drawImage(paintImage, scaledX, scaledY, null);
+						g.drawImage(paintImage, scaledX, scaledY, Color.WHITE, null);
 					}
 				}
 				
-				for(BoxType type : types)
+				for(BoxType type : BoxType.values())
 				{
 					Image paintImage = getPaintImage(type);
 					for(MapPoint point : map.find(type))
@@ -374,7 +373,7 @@ public class SchoolPlayerDebugger
 						int scaledX = (point.x - minX) * tileWidth;
 						int scaledY = (point.y - minY) * tileHeight;
 						g.fillRect(scaledX, scaledY, tileWidth, tileHeight);
-						g.drawImage(paintImage, scaledX, scaledY, null);
+						g.drawImage(paintImage, scaledX, scaledY, Color.WHITE, null);
 					}
 				}
 				
@@ -382,9 +381,8 @@ public class SchoolPlayerDebugger
 				
 				int playerScaledX = (player.x - minX) * tileWidth;
 				int playerScaledY = (player.y - minY) * tileHeight;
-				g.drawImage(this.location, playerScaledX, playerScaledY, null);
-				g.drawImage(this.location, -minX * tileWidth,
-						-minY * tileHeight, null);
+				g.drawImage(TileSprites.location, playerScaledX, playerScaledY, Color.WHITE, null);
+				g.drawImage(TileSprites.location, -minX * tileWidth, -minY * tileHeight, null);
 				
 				
 				if(DEBUG_MARKS)
@@ -433,8 +431,6 @@ public class SchoolPlayerDebugger
 				}
 				
 				SchoolPlayerDebugger.this.mapFrame.pack();
-				
-				drawLock.unlock();
 			}
 			
 			private static final long serialVersionUID = -8172988280995869457L;
@@ -506,102 +502,79 @@ public class SchoolPlayerDebugger
 	
 	private static class TileSprites
 	{
-		private static final BufferedImage black;
-		private static final BufferedImage lock;
-		private static final BufferedImage exit;
-		private static final BufferedImage key;
-		private static final BufferedImage empty;
-		private static final BufferedImage question;
-		private static final BufferedImage location;
+		private static final Image open;
+		private static final Image blocked;
+		private static final Image key;
+		private static final Image door;
+		private static final Image location;
+		private static final Image exit;
+		private static final Image unknown;
 		
-		private static final byte[] blackData =
-		{71, 73, 70, 56, 57, 97, 16, 0, 16, 0,
-				-16, 0, 0, 0, 0, 0, 0, 0, 0, 44, 0, 0,
-				0, 0, 16, 0, 16, 0, 64, 8, 29, 0, 1, 8,
-				28, 72, -80, -96, -63, -125, 8, 19, 42,
-				92, -56, -80, -95, -61, -121, 16, 35,
-				74, -100, 72, -79, -94, -59, -127, 1, 1,
-				0, 59};
-		
-		private static final byte[] lockData =
-		{71, 73, 70, 56, 57, 97, 16, 0, 16, 0,
-				-16, 0, 0, 0, 0, 0, -1, -103, 51, 33,
-				-7, 4, 1, 0, 0, 0, 0, 44, 0, 0, 0, 0,
-				16, 0, 16, 0, 64, 8, 58, 0, 1, 8, 28,
-				72, -80, 32, -63, 0, 8, 19, 42, 52, 40,
-				80, 33, 66, -122, 0, 28, 58, -124, 72,
-				-47, -32, -61, -127, 23, 11, 74, 92, 88,
-				-79, -93, 71, -122, 28, 33, 38, 108,
-				-104, 81, 99, -128, -125, 39, 45, 110,
-				44, 73, 114, -91, 74, -105, 31, 11, 6,
-				4, 0, 59};
-		
-		private static final byte[] exitData =
-		{71, 73, 70, 56, 57, 97, 16, 0, 16, 0,
-				-16, 0, 0, 0, 0, 0, 0, -64, 0, 33, -7,
-				4, 1, 0, 0, 0, 0, 44, 0, 0, 0, 0, 16, 0,
-				16, 0, 64, 8, 63, 0, 1, 8, 28, 72, -80,
-				-96, -64, 0, 8, 19, 26, 68, 104, 16, 64,
-				-128, -123, 15, 11, 50, -108, 24, -111,
-				96, -62, -117, 10, 45, 86, -44, 40, -79,
-				-95, -61, -115, 7, 49, 94, -12, 72,
-				-110, -94, -56, -119, 3, 65, -90, -116,
-				40, 18, 34, -59, -122, 40, 45, -70, 52,
-				121, -78, 100, -61, -128, 0, 59};
-		
-		private static final byte[] keyData =
-		{71, 73, 70, 56, 57, 97, 16, 0, 16, 0,
-				-16, 0, 0, 0, 0, 0, 0, 0, -1, 33, -7, 4,
-				1, 0, 0, 0, 0, 44, 0, 0, 0, 0, 16, 0,
-				16, 0, 64, 8, 53, 0, 1, 8, 28, 72, -80,
-				-96, -64, 0, 1, 14, 34, 92, -56, 112,
-				96, 67, -125, 16, 35, 74, -100, -88,
-				-80, -94, 68, -122, 8, 43, 102, -92,
-				-56, -79, -93, 71, -116, 9, 47, -122, 4,
-				-7, 112, -93, -55, -124, 27, 21, -90,
-				-12, -56, 114, 98, 64, 0, 59};
-		
-		private static final byte[] emptyData =
-		{71, 73, 70, 56, 57, 97, 16, 0, 16, 0,
-				-16, 0, 0, 0, 0, 0, 0, 0, 0, 33, -7, 4,
-				1, 0, 0, 0, 0, 44, 0, 0, 0, 0, 16, 0,
-				16, 0, 64, 8, 29, 0, 1, 8, 28, 72, -80,
-				-96, -63, -125, 8, 19, 42, 92, -56, -80,
-				-95, -61, -121, 16, 35, 74, -100, 72,
-				-79, -94, -59, -127, 1, 1, 0, 59};
-		
-		private static final byte[] questionData =
-		{71, 73, 70, 56, 57, 97, 16, 0, 16, 0,
-				-16, 0, 0, 0, 0, 0, -1, -1, -1, 44, 0,
-				0, 0, 0, 16, 0, 16, 0, 64, 8, 53, 0, 1,
-				8, 28, 72, -80, -96, 65, -127, 1, 18,
-				30, 28, -104, 48, 0, 67, -121, 11, 17,
-				66, -116, 40, 81, 33, 69, -126, 13, 47,
-				90, -68, -56, -79, -93, -63, -122, 25,
-				23, 110, 4, 48, 82, 100, -55, -125, 39,
-				61, 82, 76, -87, 18, 64, 64, 0, 59};
-		
-		private static final byte[] locationData =
-		{71, 73, 70, 56, 57, 97, 16, 0, 16, 0,
-				-16, 0, 0, 0, 0, 0, 51, 102, -103, 33,
-				-7, 4, 1, 0, 0, 0, 0, 44, 0, 0, 0, 0,
-				16, 0, 16, 0, 64, 8, 52, 0, 1, 8, 28,
-				72, -80, -96, -63, 0, 8, 19, 26, 28,
-				-104, -80, 97, -128, -123, 4, 17, 66,
-				44, -40, 112, 34, 0, -121, 10, 39, 86,
-				-76, -56, -79, -93, 70, -121, 31, 49,
-				66, -60, 40, 113, 36, 72, -117, 27, 57,
-				-106, -12, 8, 49, 32, 0, 59};
+		private static final byte[] spritesData = 
+			{71, 73, 70, 56, 57, 97, 32, 0, 64, 0,
+			-14, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1,
+			51, 102, -103, 0, -64, 0, -1, -103, 51,
+			0, 0, 0, 0, 0, 0, 33, -7, 4, 1, 0, 0, 0,
+			0, 44, 0, 0, 0, 0, 32, 0, 64, 0, 66, 8,
+			-1, 0, 1, 8, 28, 72, -80, 32, -128, 0,
+			8, 19, 42, 92, 24, -64, -96, -61, -127,
+			12, 35, 38, 124, 72, -79, -94, 65, 1, 2,
+			4, 98, -36, -56, 49, -29, -64, 2, 32,
+			67, -118, -76, 72, -78, 36, -63, 1, 40,
+			83, 26, 36, -64, -78, -27, 74, 2, 7, 37,
+			70, 52, 41, 112, 102, -51, -123, 52,
+			115, -58, -108, -119, -109, 38, 79,
+			-122, 26, 55, -46, 20, 9, 82, -89, 67,
+			-94, 68, 29, -90, 92, 58, -96, 34, -52,
+			-126, 44, 31, -94, 36, 25, 21, 42, 76,
+			-123, 16, 17, -34, -44, -22, 19, -24,
+			78, -84, 70, 75, -2, -20, 105, 114, 44,
+			-40, -78, 102, -71, -94, 77, 27, -42,
+			36, -58, -96, 37, -117, 126, 44, 80,
+			-80, -93, -57, -73, 111, 9, 34, 29, -39,
+			-74, -19, 82, -117, 45, 3, -69, 60, -55,
+			116, -86, -61, -86, 86, -107, -86, -92,
+			-8, -12, 101, 95, 0, -126, 5, 127, 85,
+			59, -71, 97, 87, -101, 95, 115, -38,
+			-60, 44, 54, -83, -27, -57, 15, 61, 127,
+			-18, -52, -10, -78, 89, -51, -98, 81,
+			-105, 94, 123, -38, -12, 88, -43, -83,
+			65, -53, 46, -56, -73, 110, -57, -72,
+			114, 67, -38, 14, 106, 55, -17, 92, -67,
+			116, 9, -26, 29, -98, -47, -73, -64,
+			-67, -70, -123, 11, 37, -119, 92, 110,
+			-37, -26, -63, 103, 75, 15, 91, -40,
+			105, -28, -63, 3, 11, 27, 94, -7, 16,
+			-79, 64, -19, 77, 9, 70, 50, 118, 92,
+			-80, 122, -9, -58, -30, -47, 103, 95,
+			-20, -108, -68, -63, -19, -116, -81,
+			123, -97, -66, 53, 54, 105, -54, -11,
+			71, -109, 4, -53, 127, -94, 107, -1,
+			-109, -63, -26, 31, 103, -5, -91, -10,
+			-97, 101, 4, 90, 36, 90, 78, 1, 1, 0,
+			59};
+
+		private static final int scaleMethod = Image.SCALE_SMOOTH;
+		private static final int tileWidth = 16;
+		private static final int tileHeight = 16;
 		
 		static
 		{
-			black = decode(blackData);
-			lock = decode(lockData);
-			exit = decode(exitData);
-			key = decode(keyData);
-			empty = decode(emptyData);
-			question = decode(questionData);
-			location = decode(locationData);
+			BufferedImage spriteSheet = decode(spritesData);
+			open = spriteSheet.getSubimage(0 * tileWidth, 0 * tileHeight, tileWidth, tileHeight)
+					.getScaledInstance(tileWidth, tileHeight, scaleMethod);
+			blocked = spriteSheet.getSubimage(1 * tileWidth, 0 * tileHeight, tileWidth, tileHeight)
+					.getScaledInstance(tileWidth, tileHeight, scaleMethod);
+			key = spriteSheet.getSubimage(0 * tileWidth, 1 * tileHeight, tileWidth, tileHeight)
+					.getScaledInstance(tileWidth, tileHeight, scaleMethod);;
+			door = spriteSheet.getSubimage(1 * tileWidth, 1 * tileHeight, tileWidth, tileHeight)
+					.getScaledInstance(tileWidth, tileHeight, scaleMethod);;
+			location = spriteSheet.getSubimage(0 * tileWidth, 2 * tileHeight, tileWidth, tileHeight)
+					.getScaledInstance(tileWidth, tileHeight, scaleMethod);;
+			exit = spriteSheet.getSubimage(1 * tileWidth, 2 * tileHeight, tileWidth, tileHeight)
+					.getScaledInstance(tileWidth, tileHeight, scaleMethod);;
+			unknown = spriteSheet.getSubimage(0 * tileWidth, 3 * tileHeight, tileWidth, tileHeight)
+					.getScaledInstance(tileWidth, tileHeight, scaleMethod);;
 		}
 		
 		private static BufferedImage decode(byte[] data)
@@ -613,7 +586,7 @@ public class SchoolPlayerDebugger
 			}
 			catch(IOException e)
 			{
-				throw new AssertionError(e);
+				throw new ExceptionInInitializerError("failed to initialize sprites");
 			}
 		}
 	}

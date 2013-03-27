@@ -59,10 +59,8 @@ public class SchoolPlayer
 			lastAction = false;
 		}
 
-		debugger.drawLock.lock();
 		updateMap(vision, this.lastMove, lastAction);
-		debugger.drawLock.unlock();
-		
+
 		this.debugger.updateMap();
 		
 		Action move = getMove(vision, keyCount, lastAction);

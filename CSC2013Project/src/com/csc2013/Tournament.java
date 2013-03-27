@@ -44,8 +44,7 @@ public class Tournament
 		}
 		catch(SlickException e)
 		{
-			System.out
-					.println("There is an internal issue with the game framework.  Please send the following error code to CSC.CaseStudy@ge.com.");
+			System.out.println("There is an internal issue with the game framework.  Please send the following error code to CSC.CaseStudy@ge.com.");
 			throw new ExceptionInInitializerError(e);
 		}
 	}
@@ -58,8 +57,7 @@ public class Tournament
 		}
 		catch(SlickException e)
 		{
-			System.out
-					.println("There is an internal issue with the game framework.  Please send the following error code to CSC.CaseStudy@ge.com.");
+			System.out.println("There is an internal issue with the game framework.  Please send the following error code to CSC.CaseStudy@ge.com.");
 			e.printStackTrace();
 		}
 	}
