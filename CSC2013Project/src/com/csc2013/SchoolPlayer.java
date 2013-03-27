@@ -57,8 +57,12 @@ public class SchoolPlayer
 		{
 			lastAction = false;
 		}
-		
+
+		debugger.drawLock.lock();
 		updateMap(vision, this.lastMove, lastAction);
+		debugger.drawLock.unlock();
+		
+		this.debugger.updateMap();
 		
 		Action move = getMove(vision, keyCount, lastAction);
 		
@@ -71,17 +75,19 @@ public class SchoolPlayer
 		//			throw new RuntimeException(e);
 		//		}
 		
-		if(vision.CurrentPoint.hasKey() != (this.map.getPlayer() == BoxType.Key))
+		if(vision.CurrentPoint.hasKey() != (this.map.getPlayerPoint().getType() == BoxType.Key))
 			throw new AssertionError("key not dectected");
 		
-		if(this.map.get(this.map.getPlayerPoint().execute(move)) == BoxType.Door)
+		if(this.map.getPlayerPoint().execute(move).getType() == BoxType.Door)
 		{
+			System.out.println("Use Action detected");
 			move = Action.Use;
 		}
-		if(this.map.getPlayer() == BoxType.Key)
-		{
-			move = Action.Pickup;
-		}
+
+//		if(vision.CurrentPoint.hasKey())
+//		{
+//			move = Action.Pickup;
+//		}
 		
 		this.lastMove = move;
 		return move;
@@ -93,9 +99,12 @@ public class SchoolPlayer
 		if(exitAction != null)
 			return exitAction;
 		
-		Action keyAction = this.map.actionTo(BoxType.Key);
-		if(keyAction != null)
-			return keyAction;
+		if(keyCount < 8)
+		{
+			Action keyAction = this.map.actionTo(BoxType.Key);
+			if(keyAction != null)
+				return keyAction;
+		}
 		
 		//		if(keyCount > 0)
 		//		{
@@ -197,7 +206,13 @@ public class SchoolPlayer
 		map.set(current.South, centerHoriz, centerVert + 1);
 		
 		map.setPlayerPosition(centerHoriz, centerVert);
-		
-		this.debugger.updateMap();
+		if(vision.CurrentPoint.hasKey())
+		{
+			map.set(BoxType.Key, centerHoriz, centerVert);
+		}
+		else
+		{
+			map.set(BoxType.Open, centerHoriz, centerVert);	
+		}
 	}
 }

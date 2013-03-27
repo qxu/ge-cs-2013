@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
@@ -35,6 +37,7 @@ import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.WindowConstants;
 
 import com.csc2013.DungeonMaze.BoxType;
+import com.csc2013.PlayerMap.MapPoint;
 
 public class SchoolPlayerDebugger
 {
@@ -55,9 +58,18 @@ public class SchoolPlayerDebugger
 	private Map<List<MapPoint>, Color> markedPaths = new ConcurrentHashMap<>();
 	private Map<MapPoint, String> stringMarks = new ConcurrentHashMap<>();
 	
+	final Lock drawLock = new ReentrantLock();
+	
 	private static volatile long millisWasted = 0;
 	
-	public static void sleep(double millis)
+	private static volatile SchoolPlayerDebugger latestInstance;
+	
+	public static SchoolPlayerDebugger getLatestInstance()
+	{
+		return latestInstance;
+	}
+	
+	public void sleep(double millis)
 	{
 		try
 		{
@@ -70,7 +82,7 @@ public class SchoolPlayerDebugger
 				stopTime = System.nanoTime();
 			}
 			millisWasted += (stopTime - stop);
-			System.out.println(millisWasted / 1000000.0);
+//			System.out.println(millisWasted / 1000000.0);
 		}
 		catch(InterruptedException e)
 		{
@@ -96,6 +108,7 @@ public class SchoolPlayerDebugger
 		
 		this.player = player;
 		this.map = map;
+		latestInstance = this;
 		
 		if(DEBUG_MAP)
 		{
@@ -192,11 +205,12 @@ public class SchoolPlayerDebugger
 	{
 		MapPoint player = this.map.getPlayerPoint();
 		
-		return (this.map.get(player) == BoxType.Exit)
-				|| (this.map.get(player.west()) == BoxType.Exit)
-				|| (this.map.get(player.east()) == BoxType.Exit)
-				|| (this.map.get(player.north()) == BoxType.Exit)
-				|| (this.map.get(player.south()) == BoxType.Exit);
+		for(MapPoint point : player.getNeighbors())
+		{
+			if(point.getType() == BoxType.Exit)
+				return true;
+		}
+		return false;
 	}
 	
 	public void updateMarks()
@@ -278,6 +292,21 @@ public class SchoolPlayerDebugger
 					.getScaledInstance(tileWidth, tileHeight, this.scaleMethod);
 			private final Image location = TileSprites.location
 					.getScaledInstance(tileWidth, tileHeight, this.scaleMethod);
+			{
+				try
+				{
+					InputStream fontStream = SchoolPlayerDebugger.class
+							.getResourceAsStream("ProggyTinySZ.ttf");
+					Font font = Font.createFont(Font.PLAIN, fontStream)
+							.deriveFont(16F);
+					fontStream.close();
+					setFont(font);
+				}
+				catch(IOException | FontFormatException e)
+				{
+					e.printStackTrace();
+				}
+			}
 			
 			private Image getPaintImage(BoxType tile)
 			{
@@ -301,25 +330,13 @@ public class SchoolPlayerDebugger
 				}
 			}
 			
-			{
-				try
-				{
-					InputStream fontStream = SchoolPlayerDebugger.class
-							.getResourceAsStream("ProggyTinySZ.ttf");
-					Font font = Font.createFont(Font.PLAIN, fontStream)
-							.deriveFont(16F);
-					fontStream.close();
-					setFont(font);
-				}
-				catch(IOException | FontFormatException e)
-				{
-					e.printStackTrace();
-				}
-			}
+			private final BoxType[] types = BoxType.values();
 			
 			@Override
 			protected void paintComponent(Graphics g)
 			{
+				drawLock.lock();
+				
 				PlayerMap map = SchoolPlayerDebugger.this.map;
 				
 				int minX = map.minX;
@@ -336,15 +353,27 @@ public class SchoolPlayerDebugger
 				setPreferredSize(size);
 				setSize(size);
 				
-				g.fillRect(0, 0, panelWidth, panelHeight);
-				
+//				g.fillRect(0, 0, panelWidth, panelHeight);
+
 				for(int x = minX; x <= maxX; x++)
 				{
 					for(int y = minY; y <= maxY; y++)
 					{
-						Image paintImage = getPaintImage(map.get(x, y));
+						Image paintImage = getPaintImage(null);
 						int scaledX = (x - minX) * tileWidth;
 						int scaledY = (y - minY) * tileHeight;
+						g.drawImage(paintImage, scaledX, scaledY, null);
+					}
+				}
+				
+				for(BoxType type : types)
+				{
+					Image paintImage = getPaintImage(type);
+					for(MapPoint point : map.find(type))
+					{
+						int scaledX = (point.x - minX) * tileWidth;
+						int scaledY = (point.y - minY) * tileHeight;
+						g.fillRect(scaledX, scaledY, tileWidth, tileHeight);
 						g.drawImage(paintImage, scaledX, scaledY, null);
 					}
 				}
@@ -354,10 +383,9 @@ public class SchoolPlayerDebugger
 				int playerScaledX = (player.x - minX) * tileWidth;
 				int playerScaledY = (player.y - minY) * tileHeight;
 				g.drawImage(this.location, playerScaledX, playerScaledY, null);
-				
 				g.drawImage(this.location, -minX * tileWidth,
-						-minY * tileHeight,
-						null);
+						-minY * tileHeight, null);
+				
 				
 				if(DEBUG_MARKS)
 				{
@@ -405,6 +433,8 @@ public class SchoolPlayerDebugger
 				}
 				
 				SchoolPlayerDebugger.this.mapFrame.pack();
+				
+				drawLock.unlock();
 			}
 			
 			private static final long serialVersionUID = -8172988280995869457L;

@@ -3,6 +3,8 @@ package com.csc2013;
 import java.util.Arrays;
 import java.util.List;
 
+import com.csc2013.PlayerMap.MapPoint;
+
 public class MapPath
 {
 	private final MapPath superPath;
@@ -71,8 +73,8 @@ public class MapPath
 	
 	public MapPath getStepPath()
 	{
-		if(length() == 1)
-			return null;
+//		if(length() == 1)
+//			return null;
 		MapPath nextPath = this;
 		for(int i = length() - 1; i >= 2; --i)
 		{

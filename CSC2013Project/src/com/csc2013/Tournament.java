@@ -18,16 +18,16 @@ public class Tournament
 	 * This variable controls how many steps a player can take before starting
 	 * the next game
 	 */
-	public final static int maxSteps = 2000;
+	public final static int maxSteps = 200;
 	/*
 	 * Possible maps to use are: map01.tmx map02.tmx map03.tmx
 	 */
-	public final static String maps[] = {"test01.tmx"};
+	public final static String maps[] = {"map01.tmx"};
 	/*
 	 * This is how many spaces ahead players can see. Acceptable values are 1
 	 * through 15.
 	 */
-	public final static int vision[] = {8};
+	public final static int vision[] = {10};
 	/*
 	 * Possible players are: PlayerType.AI PlayerType.School PlayerType.Human
 	 */

@@ -11,6 +11,7 @@ import java.util.Queue;
 import java.util.Set;
 
 import com.csc2013.DungeonMaze.BoxType;
+import com.csc2013.PlayerMap.MapPoint;
 
 public class AStarSearch
 {
@@ -29,13 +30,15 @@ public class AStarSearch
 	/*
 	 * All delays are in milliseconds.
 	 */
-	private static final double NEIGHBOR_SEARCH_DELAY = 0;
-	private static final double PATH_SEARCH_DELAY = 0.2;
-	private static final double FOUND_DEST_MARK_DELAY = 0;
+	static final double NEIGHBOR_SEARCH_DELAY = BFSearch.NEIGHBOR_SEARCH_DELAY;
+	static final double PATH_SEARCH_DELAY = BFSearch.PATH_SEARCH_DELAY;
+	static final double FOUND_DEST_MARK_DELAY = BFSearch.FOUND_DEST_MARK_DELAY;
 
-	public static Set<MapPath> search(PlayerMap ref, MapPoint start,
-			final MapPoint dest)
+	@SuppressWarnings("unused")
+	public static MapPath search(MapPoint start, final MapPoint dest)
 	{
+		SchoolPlayerDebugger debugger = SchoolPlayerDebugger.getLatestInstance();
+		
 		Map<MapPoint, Integer> gScores = new HashMap<>();
 		final Map<MapPoint, Integer> fScores = new HashMap<>();
 		
@@ -55,100 +58,107 @@ public class AStarSearch
 		gScores.put(start, 0);
 		fScores.put(start, start.distanceTo(dest));
 		
-		Set<MapPath> found = new HashSet<>();
 		while(!open.isEmpty())
 		{
 			MapPath cur = open.remove();
 			MapPoint curPoint = cur.getLastPoint();
 			
-			ref.getDebugger().markPoint(cur.getLastPoint(), Color.MAGENTA);
-			ref.getDebugger().markPath(cur, Color.DARK_GRAY);
-			ref.getDebugger().waitForMarks(PATH_SEARCH_DELAY);
+			if(PATH_SEARCH_DELAY > 0)
+			{
+				debugger.markPoint(cur.getLastPoint(), Color.MAGENTA);
+				debugger.markPath(cur, Color.DARK_GRAY);
+				debugger.waitForMarks(PATH_SEARCH_DELAY);
+			}
 			
 			if(curPoint.equals(dest))
 			{
-				found.add(cur);
-				ref.getDebugger().markPoint(curPoint, Color.GREEN);
-				ref.getDebugger().markPath(cur, Color.GREEN);
-				ref.getDebugger().waitForMarks(FOUND_DEST_MARK_DELAY);
+				if(FOUND_DEST_MARK_DELAY > 0)
+				{
+					debugger.markPoint(curPoint, Color.GREEN);
+					debugger.markPath(cur, Color.GREEN);
+					debugger.waitForMarks(FOUND_DEST_MARK_DELAY);
+				}
 				
-				ref.getDebugger().unmarkAllPoints();
-				ref.getDebugger().unmarkAllPaths();
-				ref.getDebugger().stringUnmarkAll();
-				return found;
+				debugger.unmarkAllPoints();
+				debugger.unmarkAllPaths();
+				debugger.stringUnmarkAll();
+				return cur; //TODO fix add paths
 			}
 			
 			closed.add(curPoint);
 			
-			if(found.isEmpty())
+			for(MapPoint neighbor : getNeighbors(cur.getLastPoint(), dest))
 			{
-				for(MapPoint neighbor : getNeighbors(ref, cur.getLastPoint(),
-						dest))
+				if(paused)
 				{
-					int gScore = gScores.get(curPoint) + distanceTo(ref,
-							neighbor);
-					if(closed.contains(neighbor))
+					while(paused)
 					{
-						if(gScore >= gScores.get(neighbor))
-						{
-							continue;
-						}
+						debugger.sleep(200);
 					}
-					MapPath subPath = cur.subPath(neighbor);
-					if(!open.contains(subPath))
+				}
+				
+				int gScore = gScores.get(curPoint) + distanceTo(neighbor);
+				if(closed.contains(neighbor))
+				{
+					if(gScore >= gScores.get(neighbor))
 					{
-						gScores.put(neighbor, gScore);
-						int hScore = heuristicEstimate(ref, neighbor, dest);
-						fScores.put(neighbor, gScore + hScore);
-						open.add(subPath);
-						
-						ref.getDebugger().markPoint(neighbor, Color.PINK);
-						ref.getDebugger().stringMark(neighbor,
+						continue;
+					}
+				}
+				MapPath subPath = cur.subPath(neighbor);
+				if(!open.contains(subPath))
+				{
+					gScores.put(neighbor, gScore);
+					int hScore = heuristicEstimate(neighbor, dest);
+					fScores.put(neighbor, gScore + hScore);
+					open.add(subPath);
+					
+					if(NEIGHBOR_SEARCH_DELAY > 0)
+					{
+						debugger.markPoint(neighbor, Color.PINK);
+						debugger.stringMark(neighbor,
 								String.valueOf(gScore + hScore));
-						ref.getDebugger().waitForMarks(NEIGHBOR_SEARCH_DELAY);
+						debugger.waitForMarks(NEIGHBOR_SEARCH_DELAY);
 					}
 				}
 			}
 			
 			if(!curPoint.equals(dest))
 			{
-				ref.getDebugger().unmarkPath(cur);
-				ref.getDebugger().markPoint(curPoint, Color.LIGHT_GRAY);
-			}
-			
-			if(paused)
-			{
-				while(paused)
+				if(PATH_SEARCH_DELAY > 0)
 				{
-					ref.getDebugger().sleep(200);
+					debugger.unmarkPath(cur);
+					debugger.markPoint(curPoint, Color.LIGHT_GRAY);
 				}
 			}
+			
 		}
 		
-		ref.getDebugger().unmarkAllPoints();
-		ref.getDebugger().unmarkAllPaths();
-		ref.getDebugger().stringUnmarkAll();
-		return found;
+		debugger.unmarkAllPoints();
+		debugger.unmarkAllPaths();
+		debugger.stringUnmarkAll();
+		return null;
 	}
 	
-	private static int heuristicEstimate(PlayerMap ref, MapPoint point,
-			MapPoint dest)
+	private static int heuristicEstimate(MapPoint point, MapPoint dest)
 	{
 		return point.distanceTo(dest);
 	}
 	
-	private static int distanceTo(PlayerMap ref, MapPoint point)
+	private static int distanceTo(MapPoint point)
 	{
 		return 1;
 	}
 	
-	private static Iterable<MapPoint> getNeighbors(PlayerMap ref,
-			MapPoint point, MapPoint dest)
+	private static Iterable<MapPoint> getNeighbors(MapPoint point, MapPoint dest)
 	{
 		Collection<MapPoint> neighbors = new HashSet<>(4);
 		for(MapPoint neighbor : point.getNeighbors())
 		{
-			if(neighbor.equals(dest) || (ref.get(neighbor) == BoxType.Open))
+			BoxType type = neighbor.getType();
+			if(neighbor.equals(dest)
+					|| (type == BoxType.Open)
+					|| (type == BoxType.Key))
 			{
 				neighbors.add(neighbor);
 			}
