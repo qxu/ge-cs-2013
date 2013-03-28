@@ -12,6 +12,7 @@ import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
+import java.awt.image.VolatileImage;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -19,9 +20,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.ConcurrentModificationException;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.LinkedBlockingQueue;
 
 import javax.imageio.ImageIO;
 import javax.swing.BoxLayout;
@@ -198,47 +198,19 @@ public class PlayerMapDebugger
 	{
 		if(DEBUG_MAP && DEBUG_MARKS)
 		{
-			SwingUtilities.invokeLater(new Runnable()
-			{
-				@Override
-				public void run()
-				{
-					PlayerMapDebugger.this.mapFrame.repaint();
-				}
-			});
+			this.mapPanel.repaint();
 		}
-	}
-	
-	public void updatePoint(MapPoint point)
-	{
-		this.mapPanel.addToQueue(point);
 	}
 	
 	public void repaintMap()
 	{
 		if(DEBUG_MAP)
 		{
-			try
+			this.mapPanel.repaint();
+			
+			if(finishedMap())
 			{
-				SwingUtilities.invokeAndWait(new Runnable()
-				{
-					
-					@Override
-					public void run()
-					{
-						PlayerMapDebugger.this.mapFrame.repaint();
-						PlayerMapDebugger.this.mapFrame.pack();
-						
-						if(finishedMap())
-						{
-							PlayerMapDebugger.this.mapFrame.dispose();
-						}
-					}
-				});
-			}
-			catch(InvocationTargetException | InterruptedException e)
-			{
-				throw new RuntimeException(e);
+				this.mapFrame.dispose();
 			}
 		}
 	}
@@ -322,8 +294,6 @@ public class PlayerMapDebugger
 		private int maxX = 0;
 		private int maxY = 0;
 		
-		private Queue<MapPoint> updateQueue = new LinkedBlockingQueue<>();
-		
 		public MapDebugPanel()
 		{
 			super();
@@ -342,15 +312,10 @@ public class PlayerMapDebugger
 			}
 		}
 		
-		public void addToQueue(MapPoint update)
-		{
-			cacheBounds(update);
-			this.updateQueue.add(update);
-		}
-		
 		@Override
-		protected void paintComponent(Graphics g)
+		protected void paintComponent(Graphics g0)
 		{
+			Graphics g = g0.create();
 			boolean failedToPaint = true;
 			do
 			{
@@ -366,10 +331,18 @@ public class PlayerMapDebugger
 				}
 			}
 			while(failedToPaint);
+			g.dispose();
 		}
 		
 		private void updatePaint(Graphics g) throws ConcurrentModificationException
 		{
+			Set<MapPoint> grid = PlayerMapDebugger.this.map.getGrid();
+			
+			for(MapPoint point : grid)
+			{
+				checkBounds(point);
+			}
+			
 			PlayerMap map = PlayerMapDebugger.this.map;
 			
 			int lengthX = maxX - minX;
@@ -380,22 +353,20 @@ public class PlayerMapDebugger
 			Dimension size = new Dimension(panelWidth, panelHeight);
 			setPreferredSize(size);
 			setSize(size);
+			PlayerMapDebugger.this.mapFrame.pack();
 			
-//				BufferedImage img = new BufferedImage(panelWidth, panelHeight, BufferedImage.TYPE_INT_RGB);
-//				img.createGraphics();
-			
-//				for(int x = minX; x <= maxX; x++)
+//			for(int x = minX; x <= maxX; x++)
+//			{
+//				for(int y = minY; y <= maxY; y++)
 //				{
-//					for(int y = minY; y <= maxY; y++)
-//					{
-//						Image paintImage = getPaintImage(null);
-//						int scaledX = (x - minX) * tileWidth;
-//						int scaledY = (y - minY) * tileHeight;
-//						g.drawImage(paintImage, scaledX, scaledY, Color.WHITE, null);
-//					}
+//					Image paintImage = getPaintImage(null);
+//					int scaledX = (x - minX) * tileWidth;
+//					int scaledY = (y - minY) * tileHeight;
+//					g.drawImage(paintImage, scaledX, scaledY, Color.WHITE, null);
 //				}
+//			}
 			
-			for(MapPoint point : updateQueue)
+			for(MapPoint point : grid)
 			{
 				Image paintImage = getPaintImage(point.getType());
 				int scaledX = (point.x - minX) * tileWidth;
@@ -408,9 +379,8 @@ public class PlayerMapDebugger
 			
 			int playerScaledX = (player.x - minX) * tileWidth;
 			int playerScaledY = (player.y - minY) * tileHeight;
-			g.drawImage(TileSprites.location, playerScaledX, playerScaledY, Color.WHITE, null);
-			g.drawImage(TileSprites.location, -minX * tileWidth, -minY * tileHeight, null);
-			
+			g.drawImage(TileSprites.LOCATION, playerScaledX, playerScaledY, Color.WHITE, null);
+			g.drawImage(TileSprites.LOCATION, -minX * tileWidth, -minY * tileHeight, null);
 			
 			if(DEBUG_MARKS)
 			{
@@ -456,34 +426,32 @@ public class PlayerMapDebugger
 					g.drawString(entry.getValue(), x, y);
 				}
 			}
-			
-			PlayerMapDebugger.this.mapFrame.pack();
 		}
 		
 
 		private Image getPaintImage(BoxType tile)
 		{
 			if(tile == null)
-				return TileSprites.unknown;
+				return TileSprites.UNKNOWN;
 			
 			switch(tile)
 			{
 				case Open:
-					return TileSprites.open;
+					return TileSprites.OPEN;
 				case Blocked:
-					return TileSprites.blocked;
+					return TileSprites.BLOCKED;
 				case Door:
-					return TileSprites.door;
+					return TileSprites.DOOR;
 				case Exit:
-					return TileSprites.exit;
+					return TileSprites.EXIT;
 				case Key:
-					return TileSprites.key;
+					return TileSprites.KEY;
 				default:
 					throw new AssertionError();
 			}
 		}
 		
-		private void cacheBounds(MapPoint point)
+		private void checkBounds(MapPoint point)
 		{
 			int x = point.x;
 			int y = point.y;
@@ -507,13 +475,13 @@ public class PlayerMapDebugger
 	}
 	private static class TileSprites
 	{
-		private static final Image open;
-		private static final Image blocked;
-		private static final Image key;
-		private static final Image door;
-		private static final Image location;
-		private static final Image exit;
-		private static final Image unknown;
+		private static final Image OPEN;
+		private static final Image BLOCKED;
+		private static final Image KEY;
+		private static final Image DOOR;
+		private static final Image LOCATION;
+		private static final Image EXIT;
+		private static final Image UNKNOWN;
 		
 		private static final byte[] spritesData = 
 			{71, 73, 70, 56, 57, 97, 32, 0, 64, 0,
@@ -566,19 +534,19 @@ public class PlayerMapDebugger
 		static
 		{
 			BufferedImage spriteSheet = decode(spritesData);
-			open = spriteSheet.getSubimage(0 * tileWidth, 0 * tileHeight, tileWidth, tileHeight)
+			OPEN = spriteSheet.getSubimage(0 * tileWidth, 0 * tileHeight, tileWidth, tileHeight)
 					.getScaledInstance(tileWidth, tileHeight, scaleMethod);
-			blocked = spriteSheet.getSubimage(1 * tileWidth, 0 * tileHeight, tileWidth, tileHeight)
+			BLOCKED = spriteSheet.getSubimage(1 * tileWidth, 0 * tileHeight, tileWidth, tileHeight)
 					.getScaledInstance(tileWidth, tileHeight, scaleMethod);
-			key = spriteSheet.getSubimage(0 * tileWidth, 1 * tileHeight, tileWidth, tileHeight)
+			KEY = spriteSheet.getSubimage(0 * tileWidth, 1 * tileHeight, tileWidth, tileHeight)
 					.getScaledInstance(tileWidth, tileHeight, scaleMethod);;
-			door = spriteSheet.getSubimage(1 * tileWidth, 1 * tileHeight, tileWidth, tileHeight)
+			DOOR = spriteSheet.getSubimage(1 * tileWidth, 1 * tileHeight, tileWidth, tileHeight)
 					.getScaledInstance(tileWidth, tileHeight, scaleMethod);;
-			location = spriteSheet.getSubimage(0 * tileWidth, 2 * tileHeight, tileWidth, tileHeight)
+			LOCATION = spriteSheet.getSubimage(0 * tileWidth, 2 * tileHeight, tileWidth, tileHeight)
 					.getScaledInstance(tileWidth, tileHeight, scaleMethod);;
-			exit = spriteSheet.getSubimage(1 * tileWidth, 2 * tileHeight, tileWidth, tileHeight)
+			EXIT = spriteSheet.getSubimage(1 * tileWidth, 2 * tileHeight, tileWidth, tileHeight)
 					.getScaledInstance(tileWidth, tileHeight, scaleMethod);;
-			unknown = spriteSheet.getSubimage(0 * tileWidth, 3 * tileHeight, tileWidth, tileHeight)
+			UNKNOWN = spriteSheet.getSubimage(0 * tileWidth, 3 * tileHeight, tileWidth, tileHeight)
 					.getScaledInstance(tileWidth, tileHeight, scaleMethod);;
 		}
 		

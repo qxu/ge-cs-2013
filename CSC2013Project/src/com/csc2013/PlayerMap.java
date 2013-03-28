@@ -18,7 +18,7 @@ public class PlayerMap
 	private Map<MapPoint, MapPoint> grid;
 	private Map<BoxType, Set<MapPoint>> typeMap;
 	
-	final PlayerMapDebugger debugger = new PlayerMapDebugger(this);
+	final PlayerMapDebugger debugger;
 	
 	public PlayerMap()
 	{
@@ -29,6 +29,7 @@ public class PlayerMap
 	{
 		reset();
 		this.player = new MapPoint(0, 0);
+		this.debugger = new PlayerMapDebugger(this);
 	}
 	
 //	public void setDebugger(SchoolPlayerDebugger debug)
@@ -36,12 +37,7 @@ public class PlayerMap
 //		this.debugger = debug;
 //	}
 	
-	public PlayerMapDebugger getDebugger()
-	{
-		return this.debugger;
-	}
-	
-	public void reset()
+	private void reset()
 	{
 		this.grid = new HashMap<>();
 		this.typeMap = new EnumMap<>(BoxType.class);
@@ -49,6 +45,16 @@ public class PlayerMap
 		{
 			this.typeMap.put(type, new HashSet<MapPoint>());
 		}
+	}
+
+	public PlayerMapDebugger getDebugger()
+	{
+		return this.debugger;
+	}
+	
+	public Set<MapPoint> getGrid()
+	{
+		return new HashSet<>(grid.keySet());
 	}
 	
 	public void setPlayerPosition(int x, int y)
@@ -263,7 +269,6 @@ public class PlayerMap
 				point.north = this;
 				this.south = point;
 			}
-			debugger.updatePoint(this);
 		}
 		
 		void setType(BoxType type)
@@ -274,7 +279,6 @@ public class PlayerMap
 				typeMap.get(oldType).remove(this);
 				typeMap.get(type).add(this);
 				this.type = type;
-				debugger.updatePoint(this);
 			}
 		}
 		

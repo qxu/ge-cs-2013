@@ -29,9 +29,9 @@ public class BFSearch
 	/*
 	 * All delays are in milliseconds.
 	 */
-	static final double NEIGHBOR_SEARCH_DELAY = 4;
-	static final double PATH_SEARCH_DELAY = 4;
-	static final double FOUND_DEST_MARK_DELAY = 20;
+	static final double NEIGHBOR_SEARCH_DELAY = 0;
+	static final double PATH_SEARCH_DELAY = 0;
+	static final double FOUND_DEST_MARK_DELAY = 2;
 	
 	@SuppressWarnings("unused")
 	public static Set<MapPath> search(MapPoint start, BoxType dest, boolean hasKey)

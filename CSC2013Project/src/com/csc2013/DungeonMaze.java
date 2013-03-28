@@ -21,7 +21,7 @@ public class DungeonMaze extends BasicGame {
 	@SuppressWarnings("unused")	private float gameTime = 0;  // This is not unused
 	private boolean lastAction = true;
 	private float playerMoveTime = 0;
-	private final float moveTime = 50;
+	private final float moveTime = 0;
 	private int steps = 0;
 	private boolean gameRunning = true;
 	private PlayerType curPlayer;
