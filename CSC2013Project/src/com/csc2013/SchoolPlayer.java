@@ -1,5 +1,8 @@
 package com.csc2013;
 
+import java.util.EnumSet;
+import java.util.Set;
+
 import org.newdawn.slick.SlickException;
 
 import com.csc2013.DungeonMaze.Action;
@@ -37,13 +40,8 @@ public class SchoolPlayer
 	}
 	
 	/**
-	 * To properly implement this class you simply must return an Action in the
-	 * function nextMove below.
-	 * 
-	 * You are allowed to define any helper variables or methods as you see fit
-	 * 
-	 * For a full explanation of the variables please reference the instruction
-	 * manual provided
+	 * Gets the move.<br>
+	 * Updates the map.
 	 * 
 	 * @param vision
 	 * @param keyCount
@@ -56,19 +54,14 @@ public class SchoolPlayer
 		
 		Action move = getMove(keyCount, lastAction);
 		
-		if(vision.CurrentPoint.hasKey() != (this.map.getPlayerPoint().getType() == BoxType.Key))
+		if(vision.CurrentPoint.hasKey() != (this.map.getPlayerPosition().getType() == BoxType.Key))
 			throw new AssertionError("key not dectected");
 		
-		if(this.map.getPlayerPoint().execute(move).getType() == BoxType.Door)
+		if(this.map.getPlayerPosition().execute(move).getType() == BoxType.Door)
 		{
-			System.out.println("Use Action detected");
+			System.out.println("Use Action detected"); // TODO make the algorithms detect a door automatically
 			move = Action.Use;
 		}
-
-//		if(vision.CurrentPoint.hasKey())
-//		{
-//			move = Action.Pickup;
-//		}
 
 		updatePlayerPosition(move);
 		this.lastMove = move;
@@ -77,13 +70,16 @@ public class SchoolPlayer
 	
 	private Action getMove(int keyCount, boolean lastAction)
 	{
-		Action exitAction = this.map.actionTo(BoxType.Exit);
+		PlayerMap map = this.map;
+		MapPoint player = map.getPlayerPosition();
+		
+		Action exitAction = ActionAlgorithms.actionTo(player, BoxType.Exit);
 		if(exitAction != null)
 			return exitAction;
 		
 		if(keyCount < 8)
 		{
-			Action keyAction = this.map.actionTo(BoxType.Key);
+			Action keyAction = ActionAlgorithms.actionTo(player, BoxType.Key);
 			if(keyAction != null)
 				return keyAction;
 		}
@@ -95,13 +91,16 @@ public class SchoolPlayer
 //				return doorAction;
 //		}
 		
-		Action coverSpaceAction = this.map.discoveryChannel(this.lastMove, keyCount);
+		Action coverSpaceAction = ActionAlgorithms.discoveryChannel(player, this.lastMove, keyCount);
 		if(coverSpaceAction != null)
 			return coverSpaceAction;
 		
 		System.out.println("??");
 		throw new RuntimeException("don't know what to do");
 	}
+	
+
+	
 	
 	private void updatePlayerPosition(Action move)
 	{
@@ -110,7 +109,7 @@ public class SchoolPlayer
 	
 	private void updateMap(PlayerVision vision)
 	{
-		MapPoint player = this.map.getPlayerPoint();
+		MapPoint player = this.map.getPlayerPosition();
 		
 		int centerX = player.x;
 		int centerY = player.y;

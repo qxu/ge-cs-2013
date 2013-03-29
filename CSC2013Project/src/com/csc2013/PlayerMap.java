@@ -14,7 +14,7 @@ public class PlayerMap
 	private Map<MapPoint, MapPoint> grid;
 	private Map<MapPoint, BoxType> typeMap;
 
-	private MapPoint player;
+	private MapPoint playerPosition;
 	
 	private final PlayerMapDebugger debugger;
 	
@@ -27,7 +27,7 @@ public class PlayerMap
 	{
 		this.grid = new HashMap<>();
 		this.typeMap = new HashMap<>();
-		this.player = new MapPoint(0, 0, this);
+		this.playerPosition = new MapPoint(0, 0, this);
 		this.debugger = new PlayerMapDebugger(this);
 	}
 	
@@ -58,7 +58,7 @@ public class PlayerMap
 	
 	public void movePlayer(Action move)
 	{
-		this.player = this.player.execute(move);
+		this.playerPosition = this.playerPosition.execute(move);
 	}
 	
 	public MapPoint set(int x, int y, BoxType type)
@@ -80,12 +80,10 @@ public class PlayerMap
 		}
 	}
 	
-	public MapPoint getPlayerPoint()
+	public MapPoint getPlayerPosition()
 	{
-		return this.player;
+		return this.playerPosition;
 	}
-	
-	/* Important stuff */
 	
 	public Set<MapPoint> find(BoxType type)
 	{
@@ -98,94 +96,5 @@ public class PlayerMap
 			}
 		}
 		return found;
-	}
-	
-	public Action actionTo(BoxType type)
-	{
-		Set<MapPoint> destPoints = find(type);
-		if(destPoints.isEmpty())
-			return null;
-		
-		if(destPoints.size() == 1) // use optimized AStar algorithm
-			return aStarAction(destPoints.iterator().next());
-		
-		Set<MapPath> paths = BFSearch.search(getPlayerPoint(), type, false);
-		
-		if(paths.isEmpty())
-			return null;
-		
-		for(MapPath path : paths)
-		{
-			Action move = getPathAction(path);
-			if(desirableEndResult(move))
-				return move;
-		}
-		
-		return getPathAction(paths.iterator().next());
-	}
-	
-	private Action getPathAction(MapPath path)
-	{
-		final MapPoint player = getPlayerPoint();
-		final MapPoint point = path.getStepPath().getLastPoint();
-		if(player.equals(point))
-			return Action.Pickup;
-		return player.actionTo(point);
-	}
-	
-	private Action aStarAction(MapPoint dest)
-	{
-		MapPath path = AStarSearch.search(getPlayerPoint(), dest);
-		return getPathAction(path);
-	}
-	
-	public Action discoveryChannel(Action lastMove, int keyCount)
-	{
-//		if(lastMove != null && desirableEndResult(lastMove))
-//			return lastMove;
-		MapPoint player = getPlayerPoint();
-		System.out.println(player.east());
-		
-		
-		Set<MapPath> paths = BFSearch.search(getPlayerPoint(), null,
-				keyCount > 0);
-		
-		if(paths.isEmpty())
-			return null;
-		
-		Set<Action> moves = EnumSet.noneOf(Action.class);
-		for(MapPath path : paths)
-		{
-			moves.add(getPathAction(path));
-		}
-		
-		for(Action move : moves)
-		{
-			if(desirableEndResult(move))
-				return move;
-		}
-		
-		if(moves.contains(lastMove))
-			return lastMove;
-		
-		System.out.println("not sure which");
-		return moves.iterator().next();
-	}
-	
-	private boolean desirableEndResult(Action move)
-	{
-		MapPoint cur = getPlayerPoint();
-		if(move == Action.Pickup)
-		{
-			return cur.getType() == BoxType.Key;
-		}
-		while(cur.getType() != BoxType.Blocked && cur.getType() != null)
-		{
-			MapPoint next = cur.execute(move);
-			if(next.equals(cur))
-				return false;
-			cur = next;
-		}
-		return cur.getType() == null;
 	}
 }

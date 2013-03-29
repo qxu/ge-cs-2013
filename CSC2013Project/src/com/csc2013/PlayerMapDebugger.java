@@ -179,7 +179,7 @@ public class PlayerMapDebugger
 	
 	private boolean finishedMap()
 	{
-		MapPoint player = map.getPlayerPoint();
+		MapPoint player = map.getPlayerPosition();
 		
 		for(MapPoint point : player.getNeighbors())
 		{
@@ -369,7 +369,7 @@ public class PlayerMapDebugger
 				g.drawImage(paintImage, scaledX, scaledY, Color.WHITE, null);
 			}
 			
-			MapPoint player = map.getPlayerPoint();
+			MapPoint player = map.getPlayerPosition();
 			
 			int playerScaledX = (player.x - minX) * tileWidth;
 			int playerScaledY = (player.y - minY) * tileHeight;
@@ -378,6 +378,18 @@ public class PlayerMapDebugger
 			
 			if(DEBUG_MARKS)
 			{
+				for(Map.Entry<MapPoint, Color> entry : PlayerMapDebugger.this.markedPoints
+						.entrySet())
+				{
+					MapPoint point = entry.getKey();
+					int markWidth = tileWidth / 3;
+					int markHeight = tileHeight / 3;
+					int x = (point.x - minX) * tileWidth + (tileWidth - markWidth) / 2;
+					int y = (point.y - minY) * tileHeight + (tileHeight - markHeight) / 2;
+					g.setColor(entry.getValue());
+					g.fillRect(x, y, markWidth, markHeight);
+				}
+
 				for(Map.Entry<List<MapPoint>, Color> entry : PlayerMapDebugger.this.markedPaths
 						.entrySet())
 				{
@@ -395,18 +407,6 @@ public class PlayerMapDebugger
 						g.drawLine(x1, y1, x2, y2);
 						prev = cur;
 					}
-				}
-				
-				for(Map.Entry<MapPoint, Color> entry : PlayerMapDebugger.this.markedPoints
-						.entrySet())
-				{
-					MapPoint point = entry.getKey();
-					int x = (point.x - minX) * tileWidth + tileWidth / 8;
-					int y = (point.y - minY) * tileHeight + tileHeight / 8;
-					int markWidth = tileWidth / 3;
-					int markHeight = tileHeight / 3;
-					g.setColor(entry.getValue());
-					g.fillRect(x, y, markWidth, markHeight);
 				}
 				
 				g.setColor(Color.BLACK);

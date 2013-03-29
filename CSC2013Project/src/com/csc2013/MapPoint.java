@@ -26,6 +26,11 @@ public class MapPoint
 		this.map = map;
 	}
 	
+	public PlayerMap getMap()
+	{
+		return this.map;
+	}
+	
 	public BoxType getType()
 	{
 		return this.map.getTypeOf(this);

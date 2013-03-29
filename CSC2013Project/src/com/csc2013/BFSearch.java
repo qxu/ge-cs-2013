@@ -15,11 +15,19 @@ public class BFSearch
 {
 	private static volatile boolean paused = false;
 	
+	/**
+	 * Halts the search algorithm. The algorithm will not start/resume
+	 * until {@code BFSearch.resume()} is called.
+	 */
 	public static void pause()
 	{
 		paused = true;
 	}
 	
+	/**
+	 * Used to resume the search algorithm to normal operation. This is
+	 * useful for debugging purposes.
+	 */
 	public static void resume()
 	{
 		paused = false;
@@ -29,11 +37,23 @@ public class BFSearch
 	 * All delays are in milliseconds.
 	 */
 	static final double NEIGHBOR_SEARCH_DELAY = 0;
-	static final double PATH_SEARCH_DELAY = 2;
+	static final double PATH_SEARCH_DELAY = 0;
 	static final double FOUND_DEST_MARK_DELAY = 2;
 	
-	@SuppressWarnings("unused")
-	public static Set<MapPath> search(MapPoint start, BoxType dest, boolean hasKey)
+	/**
+	 * Searches for a {@code BoxType} from the given start point.
+	 * The search algorithm used is a Breath-first search (BFS) modified
+	 * to use a past path-cost function g(x) to determine the next point
+	 * to evaluate.
+	 * 
+	 * @param start the starting point
+	 * @param dest the {@code BoxType} to search for
+	 * @param hasKey
+	 * @return the set of solution MapPaths
+	 * 
+	 * @see <a href="http://en.wikipedia.org/wiki/Breadth-first_search">Breadth-first search - Wikipedia</a>
+	 */
+	public static Set<MapPath> search(MapPoint start, BoxType dest, int keyCount)
 	{
 		PlayerMapDebugger debugger = SchoolPlayer.getLatestDebugger();
 		
@@ -51,26 +71,19 @@ public class BFSearch
 		{
 			Entry<MapPath, Integer> curEntry = getShortestPath(gScores);
 			MapPath cur = curEntry.getKey();
-			
 			MapPoint curPoint = cur.getLastPoint();
 			
-			if(PATH_SEARCH_DELAY > 0)
-			{
-				debugger.markPoint(curPoint, Color.MAGENTA);
-				debugger.markPath(cur, Color.DARK_GRAY);
-				debugger.waitForMarks(PATH_SEARCH_DELAY);
-			}
+			debugger.markPoint(curPoint, Color.MAGENTA);
+			debugger.markPath(cur, Color.DARK_GRAY);
+			debugger.waitForMarks(PATH_SEARCH_DELAY);
 			
 			if(curPoint.getType() == dest)
 			{
 				if(foundG == null || curEntry.getValue().compareTo(foundG) <= 0)
 				{
-					if(FOUND_DEST_MARK_DELAY > 0)
-					{
-						debugger.markPoint(curPoint, Color.GREEN);
-						debugger.markPath(cur, Color.GREEN);
-						debugger.waitForMarks(FOUND_DEST_MARK_DELAY);
-					}
+					debugger.markPoint(curPoint, Color.GREEN);
+					debugger.markPath(cur, Color.GREEN);
+					debugger.waitForMarks(FOUND_DEST_MARK_DELAY);
 
 					found.add(cur);
 					foundG = curEntry.getValue();
@@ -83,7 +96,7 @@ public class BFSearch
 			
 			if(found.isEmpty())
 			{
-				for(MapPoint neighbor : getNeighbors(curPoint, dest, hasKey))
+				for(MapPoint neighbor : getNeighbors(curPoint, dest, keyCount))
 				{
 					if(paused)
 					{
@@ -107,11 +120,8 @@ public class BFSearch
 						open.put(subPath, subPath);
 						gScores.put(subPath, gScore);
 						
-						if(NEIGHBOR_SEARCH_DELAY > 0)
-						{
-							debugger.markPoint(neighbor, Color.PINK);
-							debugger.waitForMarks(NEIGHBOR_SEARCH_DELAY);
-						}
+						debugger.markPoint(neighbor, Color.PINK);
+						debugger.waitForMarks(NEIGHBOR_SEARCH_DELAY);
 					}
 					else
 					{
@@ -131,11 +141,8 @@ public class BFSearch
 			
 			if(curPoint.getType() != dest)
 			{
-				if(PATH_SEARCH_DELAY > 0)
-				{
-					debugger.unmarkPath(cur);
-					debugger.markPoint(curPoint, Color.LIGHT_GRAY);
-				}
+				debugger.unmarkPath(cur);
+				debugger.markPoint(curPoint, Color.LIGHT_GRAY);
 			}
 		}
 		
@@ -153,9 +160,9 @@ public class BFSearch
 	}
 	
 	private static Entry<MapPath, Integer> getShortestPath(
-			Map<MapPath, Integer> map)
+			Map<MapPath, Integer> gScoreMap)
 	{
-		Iterator<Entry<MapPath, Integer>> iter = map.entrySet().iterator();
+		Iterator<Entry<MapPath, Integer>> iter = gScoreMap.entrySet().iterator();
 		Entry<MapPath, Integer> minEntry = iter.next();
 		Integer min = minEntry.getValue();
 		while(iter.hasNext())
@@ -171,7 +178,7 @@ public class BFSearch
 		return minEntry;
 	}
 	
-	private static Iterable<MapPoint> getNeighbors(MapPoint point, BoxType dest, boolean hasKey)
+	private static Iterable<MapPoint> getNeighbors(MapPoint point, BoxType dest, int keyCount)
 	{
 		Collection<MapPoint> neighbors = new HashSet<>(4);
 		for(MapPoint neighbor : point.getNeighbors())
@@ -179,7 +186,7 @@ public class BFSearch
 			BoxType type = neighbor.getType();
 			if((type == dest)
 					|| (type == BoxType.Open)
-					|| (type == BoxType.Door && hasKey)
+					|| (type == BoxType.Door && keyCount > 0)
 					|| (type == BoxType.Key))
 			{
 				neighbors.add(neighbor);

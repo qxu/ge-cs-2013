@@ -157,9 +157,4 @@ public class MapPath
 		}
 		return sb.append(this.point.toString()).toString();
 	}
-	
-	static
-	{
-		
-	}
 }

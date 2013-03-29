@@ -15,12 +15,21 @@ import com.csc2013.DungeonMaze.BoxType;
 public class AStarSearch
 {
 	private static volatile boolean paused = false;
-
+	
+	/**
+	 * Halts the search algorithm. The algorithm will not start/resume
+	 * until {@code AStarSearch.resume()} is called. This is useful for
+	 * debugging purposes.
+	 */
 	public static void pause()
 	{
 		paused = true;
 	}
 	
+	/**
+	 * Used to resume the search algorithm to normal operation. This is
+	 * useful for debugging purposes.
+	 */
 	public static void resume()
 	{
 		paused = false;
@@ -33,7 +42,17 @@ public class AStarSearch
 	static final double PATH_SEARCH_DELAY = BFSearch.PATH_SEARCH_DELAY;
 	static final double FOUND_DEST_MARK_DELAY = BFSearch.FOUND_DEST_MARK_DELAY;
 
-	@SuppressWarnings("unused")
+	/**
+	 * Calculates the optimal path from {@code MapPoint} start to
+	 * {@code MapPoint} dest. The search algorithm used is the A* search
+	 * algorithm.
+	 * 
+	 * @param start the starting point
+	 * @param dest the destination point
+	 * @return the optimal path
+	 * 
+	 * @see <a href="http://en.wikipedia.org/wiki/A*_search_algorithm">A* search algorithm - Wikipedia</a>
+	 */
 	public static MapPath search(MapPoint start, final MapPoint dest)
 	{
 		PlayerMapDebugger debugger = SchoolPlayer.getLatestDebugger();
@@ -62,21 +81,15 @@ public class AStarSearch
 			MapPath cur = open.remove();
 			MapPoint curPoint = cur.getLastPoint();
 			
-			if(PATH_SEARCH_DELAY > 0)
-			{
-				debugger.markPoint(cur.getLastPoint(), Color.MAGENTA);
+			debugger.markPoint(cur.getLastPoint(), Color.MAGENTA);
 				debugger.markPath(cur, Color.DARK_GRAY);
 				debugger.waitForMarks(PATH_SEARCH_DELAY);
-			}
 			
 			if(curPoint.equals(dest))
 			{
-				if(FOUND_DEST_MARK_DELAY > 0)
-				{
-					debugger.markPoint(curPoint, Color.GREEN);
-					debugger.markPath(cur, Color.GREEN);
-					debugger.waitForMarks(FOUND_DEST_MARK_DELAY);
-				}
+				debugger.markPoint(curPoint, Color.GREEN);
+				debugger.markPath(cur, Color.GREEN);
+				debugger.waitForMarks(FOUND_DEST_MARK_DELAY);
 				
 				debugger.unmarkAllPoints();
 				debugger.unmarkAllPaths();
@@ -112,25 +125,18 @@ public class AStarSearch
 					fScores.put(neighbor, gScore + hScore);
 					open.add(subPath);
 					
-					if(NEIGHBOR_SEARCH_DELAY > 0)
-					{
-						debugger.markPoint(neighbor, Color.PINK);
-						debugger.stringMark(neighbor,
-								String.valueOf(gScore + hScore));
-						debugger.waitForMarks(NEIGHBOR_SEARCH_DELAY);
-					}
+					debugger.markPoint(neighbor, Color.PINK);
+					debugger.stringMark(neighbor,
+							String.valueOf(gScore + hScore));
+					debugger.waitForMarks(NEIGHBOR_SEARCH_DELAY);
 				}
 			}
 			
 			if(!curPoint.equals(dest))
 			{
-				if(PATH_SEARCH_DELAY > 0)
-				{
-					debugger.unmarkPath(cur);
-					debugger.markPoint(curPoint, Color.LIGHT_GRAY);
-				}
+				debugger.unmarkPath(cur);
+				debugger.markPoint(curPoint, Color.LIGHT_GRAY);
 			}
-			
 		}
 		
 		debugger.unmarkAllPoints();
