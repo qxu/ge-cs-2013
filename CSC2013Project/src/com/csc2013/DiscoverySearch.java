@@ -6,14 +6,14 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
+import java.util.Map.Entry;
 
 import com.csc2013.DungeonMaze.BoxType;
 
-public class BFSearch
+public class DiscoverySearch
 {
-	private static volatile boolean paused = false;
+private static volatile boolean paused = false;
 	
 	public static void pause()
 	{

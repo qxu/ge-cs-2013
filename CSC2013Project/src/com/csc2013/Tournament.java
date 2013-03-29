@@ -22,7 +22,7 @@ public class Tournament
 	/*
 	 * Possible maps to use are: map01.tmx map02.tmx map03.tmx
 	 */
-	public final static String maps[] = {"map01.tmx"};
+	public final static String maps[] = {"test01.tmx"};
 	/*
 	 * This is how many spaces ahead players can see. Acceptable values are 1
 	 * through 15.
@@ -60,5 +60,6 @@ public class Tournament
 			System.out.println("There is an internal issue with the game framework.  Please send the following error code to CSC.CaseStudy@ge.com.");
 			e.printStackTrace();
 		}
+		System.exit(0);
 	}
 }

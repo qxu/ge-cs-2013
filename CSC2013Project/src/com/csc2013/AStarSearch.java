@@ -11,7 +11,6 @@ import java.util.Queue;
 import java.util.Set;
 
 import com.csc2013.DungeonMaze.BoxType;
-import com.csc2013.PlayerMap.MapPoint;
 
 public class AStarSearch
 {
@@ -37,7 +36,7 @@ public class AStarSearch
 	@SuppressWarnings("unused")
 	public static MapPath search(MapPoint start, final MapPoint dest)
 	{
-		PlayerMapDebugger debugger = SchoolPlayer.getLatestInstance().map.debugger;
+		PlayerMapDebugger debugger = SchoolPlayer.getLatestDebugger();
 		
 		Map<MapPoint, Integer> gScores = new HashMap<>();
 		final Map<MapPoint, Integer> fScores = new HashMap<>();
@@ -139,7 +138,7 @@ public class AStarSearch
 		debugger.stringUnmarkAll();
 		return null;
 	}
-	
+
 	private static int heuristicEstimate(MapPoint point, MapPoint dest)
 	{
 		return point.distanceTo(dest);
@@ -155,12 +154,15 @@ public class AStarSearch
 		Collection<MapPoint> neighbors = new HashSet<>(4);
 		for(MapPoint neighbor : point.getNeighbors())
 		{
-			BoxType type = neighbor.getType();
-			if(neighbor.equals(dest)
-					|| (type == BoxType.Open)
-					|| (type == BoxType.Key))
+			if(neighbor != null)
 			{
-				neighbors.add(neighbor);
+				BoxType type = neighbor.getType();
+				if(neighbor.equals(dest)
+						|| (type == BoxType.Open)
+						|| (type == BoxType.Key))
+				{
+					neighbors.add(neighbor);
+				}
 			}
 		}
 		return neighbors;

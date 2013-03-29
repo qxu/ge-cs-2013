@@ -1,7 +1,5 @@
 package com.csc2013;
 
-import java.util.Arrays;
-import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -11,14 +9,14 @@ import java.util.Set;
 import com.csc2013.DungeonMaze.Action;
 import com.csc2013.DungeonMaze.BoxType;
 
-
 public class PlayerMap
 {
-	private MapPoint player;
 	private Map<MapPoint, MapPoint> grid;
-	private Map<BoxType, Set<MapPoint>> typeMap;
+	private Map<MapPoint, BoxType> typeMap;
+
+	private MapPoint player;
 	
-	final PlayerMapDebugger debugger;
+	private final PlayerMapDebugger debugger;
 	
 	public PlayerMap()
 	{
@@ -27,26 +25,22 @@ public class PlayerMap
 	
 	public PlayerMap(int x, int y)
 	{
-		reset();
-		this.player = new MapPoint(0, 0);
+		this.grid = new HashMap<>();
+		this.typeMap = new HashMap<>();
+		this.player = new MapPoint(0, 0, this);
 		this.debugger = new PlayerMapDebugger(this);
 	}
 	
-//	public void setDebugger(SchoolPlayerDebugger debug)
-//	{
-//		this.debugger = debug;
-//	}
-	
-	private void reset()
+	public MapPoint get(MapPoint point)
 	{
-		this.grid = new HashMap<>();
-		this.typeMap = new EnumMap<>(BoxType.class);
-		for(BoxType type : BoxType.values())
-		{
-			this.typeMap.put(type, new HashSet<MapPoint>());
-		}
+		return grid.get(point);
 	}
-
+	
+	public MapPoint get(int x, int y)
+	{
+		return get(new MapPoint(x, y, this));
+	}
+	
 	public PlayerMapDebugger getDebugger()
 	{
 		return this.debugger;
@@ -56,37 +50,34 @@ public class PlayerMap
 	{
 		return new HashSet<>(grid.keySet());
 	}
-	
-	public void setPlayerPosition(int x, int y)
+
+	public BoxType getTypeOf(MapPoint point)
 	{
-		// TODO if getLocalized returns null
-		this.player = getLocalized(x, y);
+		return typeMap.get(point);
 	}
 	
-	private MapPoint getLocalized(int x, int y)
+	public void movePlayer(Action move)
 	{
-		return grid.get(new MapPoint(x, y));
+		this.player = this.player.execute(move);
 	}
 	
-	public MapPoint set(BoxType type, int x, int y)
+	public MapPoint set(int x, int y, BoxType type)
 	{
 		if(type == null)
 			throw new NullPointerException();
-		MapPoint localized = getLocalized(x, y);
-		if(localized == null)
+		MapPoint newPoint = new MapPoint(x, y, this);
+		MapPoint existingPoint = grid.get(newPoint);
+		if(existingPoint == null)
 		{
-			localized = new MapPoint(x, y);
-			localized.init(type);
-		}
-		else if(localized.getType() == null)
-		{
-			localized.init(type);
+			grid.put(newPoint, newPoint);
+			typeMap.put(newPoint, type);
+			return newPoint;
 		}
 		else
 		{
-			localized.setType(type);
+			typeMap.put(existingPoint, type);
+			return existingPoint;
 		}
-		return localized;
 	}
 	
 	public MapPoint getPlayerPoint()
@@ -98,7 +89,15 @@ public class PlayerMap
 	
 	public Set<MapPoint> find(BoxType type)
 	{
-		return typeMap.get(type);
+		Set<MapPoint> found = new HashSet<>();
+		for(Map.Entry<MapPoint, BoxType> entry : typeMap.entrySet())
+		{
+			if(entry.getValue() == type)
+			{
+				found.add(entry.getKey());
+			}
+		}
+		return found;
 	}
 	
 	public Action actionTo(BoxType type)
@@ -114,7 +113,6 @@ public class PlayerMap
 		
 		if(paths.isEmpty())
 			return null;
-		System.out.println(paths);
 		
 		for(MapPath path : paths)
 		{
@@ -145,6 +143,9 @@ public class PlayerMap
 	{
 //		if(lastMove != null && desirableEndResult(lastMove))
 //			return lastMove;
+		MapPoint player = getPlayerPoint();
+		System.out.println(player.east());
+		
 		
 		Set<MapPath> paths = BFSearch.search(getPlayerPoint(), null,
 				keyCount > 0);
@@ -167,7 +168,7 @@ public class PlayerMap
 		if(moves.contains(lastMove))
 			return lastMove;
 		
-		System.out.println("not sure which o");
+		System.out.println("not sure which");
 		return moves.iterator().next();
 	}
 	
@@ -186,186 +187,5 @@ public class PlayerMap
 			cur = next;
 		}
 		return cur.getType() == null;
-	}
-	
-	public class MapPoint
-	{
-		public final int x;
-		public final int y;
-	
-		private BoxType type;
-		
-		private MapPoint west;
-		private MapPoint east;
-		private MapPoint north;
-		private MapPoint south;
-		
-		private boolean initialized;
-		
-		MapPoint(int x, int y)
-		{
-			this.x = x;
-			this.y = y;
-			this.initialized = false;
-		}
-		
-		void init(BoxType type)
-		{
-			if(initialized)
-				throw new IllegalStateException(this + " already initialized ");
-			if(type == null)
-				throw new NullPointerException();
-			this.initialized = true;
-			this.type = type;
-			grid.remove(this);
-			grid.put(this, this);
-			Set<MapPoint> typeSet = typeMap.get(type);
-			typeSet.add(this);
-			if(this.west == null)
-			{
-				MapPoint point = getLocalized(this.x - 1, this.y);
-				if(point == null)
-				{
-					point = new MapPoint(this.x - 1, this.y);
-					grid.remove(point);
-					grid.put(point, point);
-				}
-				point.east = this;
-				this.west = point;
-			}
-			if(this.east == null)
-			{
-				MapPoint point = getLocalized(this.x + 1, this.y);
-				if(point == null)
-				{
-					point = new MapPoint(this.x + 1, this.y);
-					grid.remove(point);
-					grid.put(point, point);
-				}
-				point.west = this;
-				this.east = point;
-			}
-			if(this.north == null)
-			{
-				MapPoint point = getLocalized(this.x, this.y - 1);
-				if(point == null)
-				{
-					point = new MapPoint(this.x, this.y - 1);
-					grid.remove(point);
-					grid.put(point, point);
-				}
-				point.south = this;
-				this.north = point;
-			}
-			if(this.south == null)
-			{
-				MapPoint point = getLocalized(this.x, this.y + 1);
-				if(point == null)
-				{
-					point = new MapPoint(this.x, this.y + 1);
-					grid.remove(point);
-					grid.put(point, point);
-				}
-				point.north = this;
-				this.south = point;
-			}
-		}
-		
-		void setType(BoxType type)
-		{
-			BoxType oldType = getType();
-			if(type != oldType)
-			{
-				typeMap.get(oldType).remove(this);
-				typeMap.get(type).add(this);
-				this.type = type;
-			}
-		}
-		
-		public BoxType getType()
-		{
-			return this.type;
-		}
-		
-		public MapPoint west()
-		{
-			return west;
-		}
-		
-		public MapPoint east()
-		{
-			return east;
-		}
-		
-		public MapPoint north()
-		{
-			return north;
-		}
-		
-		public MapPoint south()
-		{
-			return south;
-		}
-		
-		public Action actionTo(MapPoint point)
-		{
-			int dx = point.x - this.x;
-			int dy = point.y - this.y;
-			
-			return (Math.abs(dx) > Math.abs(dy))
-				? ((dx > 0) ? Action.East : Action.West)
-				: ((dy > 0) ? Action.South : Action.North);
-		}
-		
-		public MapPoint execute(Action move)
-		{
-			switch(move)
-			{
-				case West:
-					return west();
-				case East:
-					return east();
-				case North:
-					return north();
-				case South:
-					return south();
-				case Pickup:
-				case Use:
-					return this;
-				default:
-					throw new AssertionError();
-			}
-		}
-		
-		public int distanceTo(MapPoint dest)
-		{
-			return Math.abs(this.x - dest.x) + Math.abs(this.y - dest.y);
-		}
-		
-		public Iterable<MapPoint> getNeighbors()
-		{
-			return Arrays.asList(new MapPoint[] {west(), east(), north(), south()});
-		}
-		
-		@Override
-		public int hashCode()
-		{
-			return (31 * this.x) ^ this.y;
-		}
-		
-		@Override
-		public boolean equals(Object o)
-		{
-			if(!(o instanceof MapPoint))
-				return false;
-			MapPoint point = (MapPoint)o;
-			return (this.x == point.x) && (this.y == point.y);
-		}
-		
-		@Override
-		public String toString()
-		{
-			return getType() + "@(" + this.x + ", " + this.y + ")";
-		}
 	}
 }

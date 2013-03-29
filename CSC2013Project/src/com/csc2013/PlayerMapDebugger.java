@@ -12,11 +12,9 @@ import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
-import java.awt.image.VolatileImage;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.InvocationTargetException;
 import java.util.ConcurrentModificationException;
 import java.util.List;
 import java.util.Map;
@@ -29,12 +27,10 @@ import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
-import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
 import com.csc2013.DungeonMaze.BoxType;
-import com.csc2013.PlayerMap.MapPoint;
 
 public class PlayerMapDebugger
 {
@@ -54,6 +50,15 @@ public class PlayerMapDebugger
 	private Map<List<MapPoint>, Color> markedPaths = new ConcurrentHashMap<>();
 	private Map<MapPoint, String> stringMarks = new ConcurrentHashMap<>();
 	
+	public PlayerMapDebugger(PlayerMap map)
+	{
+		this.map = map;
+		if(DEBUG_MAP)
+		{
+			initSwingComponents();
+		}
+	}
+
 	private volatile long millisWasted = 0;
 	
 	public void sleep(double millis)
@@ -69,7 +74,6 @@ public class PlayerMapDebugger
 				stopTime = System.nanoTime();
 			}
 			millisWasted += (stopTime - stop);
-//				System.out.println(millisWasted / 1000000.0);
 		}
 		catch(InterruptedException e)
 		{
@@ -85,15 +89,6 @@ public class PlayerMapDebugger
 			{
 				sleep(millis);
 			}
-		}
-	}
-	
-	public PlayerMapDebugger(PlayerMap map)
-	{
-		this.map = map;
-		if(DEBUG_MAP)
-		{
-			initSwingComponents();
 		}
 	}
 	
@@ -182,7 +177,7 @@ public class PlayerMapDebugger
 		}
 	}
 	
-	public boolean finishedMap()
+	private boolean finishedMap()
 	{
 		MapPoint player = map.getPlayerPoint();
 		
@@ -355,16 +350,15 @@ public class PlayerMapDebugger
 			setSize(size);
 			PlayerMapDebugger.this.mapFrame.pack();
 			
-//			for(int x = minX; x <= maxX; x++)
-//			{
-//				for(int y = minY; y <= maxY; y++)
-//				{
-//					Image paintImage = getPaintImage(null);
-//					int scaledX = (x - minX) * tileWidth;
-//					int scaledY = (y - minY) * tileHeight;
-//					g.drawImage(paintImage, scaledX, scaledY, Color.WHITE, null);
-//				}
-//			}
+			for(int x = minX; x <= maxX; x++)
+			{
+				for(int y = minY; y <= maxY; y++)
+				{
+					int scaledX = (x - minX) * tileWidth;
+					int scaledY = (y - minY) * tileHeight;
+					g.drawImage(TileSprites.UNKNOWN, scaledX, scaledY, Color.WHITE, null);
+				}
+			}
 			
 			for(MapPoint point : grid)
 			{

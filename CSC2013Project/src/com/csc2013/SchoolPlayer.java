@@ -5,7 +5,6 @@ import org.newdawn.slick.SlickException;
 import com.csc2013.DungeonMaze.Action;
 import com.csc2013.DungeonMaze.BoxType;
 
-
 /**
  * 
  * [To be completed by students]
@@ -15,18 +14,15 @@ import com.csc2013.DungeonMaze.BoxType;
  */
 public class SchoolPlayer
 {
-	private int xposition = 0;
-	private int yposition = 0;
-	
 	final PlayerMap map;
 	
 	private Action lastMove;
 	
 	private static SchoolPlayer latestInstance;
 	
-	public static SchoolPlayer getLatestInstance()
+	public static PlayerMapDebugger getLatestDebugger()
 	{
-		return latestInstance;
+		return latestInstance.map.getDebugger();
 	}
 	
 	/**
@@ -56,16 +52,9 @@ public class SchoolPlayer
 	 */
 	public Action nextMove(PlayerVision vision, int keyCount, boolean lastAction)
 	{
-		if(this.lastMove == null)
-		{
-			lastAction = false;
-		}
-
-		updateMap(vision, this.lastMove, lastAction);
-
-//		this.debugger.updateMap();
+		updateMap(vision);
 		
-		Action move = getMove(vision, keyCount, lastAction);
+		Action move = getMove(keyCount, lastAction);
 		
 		if(vision.CurrentPoint.hasKey() != (this.map.getPlayerPoint().getType() == BoxType.Key))
 			throw new AssertionError("key not dectected");
@@ -80,12 +69,13 @@ public class SchoolPlayer
 //		{
 //			move = Action.Pickup;
 //		}
-		
+
+		updatePlayerPosition(move);
 		this.lastMove = move;
 		return move;
 	}
 	
-	private Action getMove(PlayerVision vision, int keyCount, boolean lastAction)
+	private Action getMove(int keyCount, boolean lastAction)
 	{
 		Action exitAction = this.map.actionTo(BoxType.Exit);
 		if(exitAction != null)
@@ -98,15 +88,14 @@ public class SchoolPlayer
 				return keyAction;
 		}
 		
-		//		if(keyCount > 0)
-		//		{
-		//			Action doorAction = this.map.actionTo(BoxType.Door);
-		//			if(doorAction != null)
-		//				return doorAction;
-		//		}
+//		if(keyCount > 0)
+//		{
+//			Action doorAction = this.map.actionTo(BoxType.Door);
+//			if(doorAction != null)
+//				return doorAction;
+//		}
 		
-		Action coverSpaceAction = this.map.discoveryChannel(this.lastMove,
-				keyCount);
+		Action coverSpaceAction = this.map.discoveryChannel(this.lastMove, keyCount);
 		if(coverSpaceAction != null)
 			return coverSpaceAction;
 		
@@ -114,97 +103,66 @@ public class SchoolPlayer
 		throw new RuntimeException("don't know what to do");
 	}
 	
-	private void updateMap(PlayerVision vision, Action move, boolean lastAction)
+	private void updatePlayerPosition(Action move)
 	{
-		if(lastAction)
-		{
-			switch(this.lastMove)
-			{
-				case West:
-					--this.xposition;
-					break;
-				case East:
-					++this.xposition;
-					break;
-				case North:
-					--this.yposition;
-					break;
-				case South:
-					++this.yposition;
-					break;
-				case Pickup:
-				case Use:
-					break;
-			}
-		}
+		this.map.movePlayer(move);
+	}
+	
+	private void updateMap(PlayerVision vision)
+	{
+		MapPoint player = this.map.getPlayerPoint();
 		
-		int leftOffset = vision.mWest;
-		int rightOffset = vision.mEast;
-		int topOffset = vision.mNorth;
-		int bottomOffset = vision.mSouth;
+		int centerX = player.x;
+		int centerY = player.y;
 		
-		int centerHoriz = this.xposition;
-		int centerVert = this.yposition;
+		int westOffset = vision.mWest;
+		int eastOffset = vision.mEast;
+		int northOffset = vision.mNorth;
+		int southOffset = vision.mSouth;
 		
-		MapBox[] left = vision.West;
-		MapBox[] right = vision.East;
-		MapBox[] top = vision.North;
-		MapBox[] bottom = vision.South;
+		MapBox[] west = vision.West;
+		MapBox[] east = vision.East;
+		MapBox[] north = vision.North;
+		MapBox[] south = vision.South;
 		
 		PlayerMap map = this.map;
 		
-		for(int i = leftOffset - 1; i >= 0; --i)
+		for(int i = westOffset - 1; i >= 0; --i)
 		{
-			MapBox cell = left[i];
-			map.set(cell.West, centerHoriz - i - 2, centerVert);
-			map.set(cell.North, centerHoriz - i - 1, centerVert - 1);
-			map.set(cell.South, centerHoriz - i - 1, centerVert + 1);
+			MapBox cell = west[i];
+			map.set(centerX - i - 2, centerY, cell.West);
+			map.set(centerX - i - 1, centerY - 1, cell.North);
+			map.set(centerX - i - 1, centerY + 1, cell.South);
 		}
-		for(int i = rightOffset - 1; i >= 0; --i)
+		for(int i = eastOffset - 1; i >= 0; --i)
 		{
-			MapBox cell = right[i];
-			map.set(cell.East, centerHoriz + i + 2, centerVert);
-			map.set(cell.North, centerHoriz + i + 1, centerVert - 1);
-			map.set(cell.South, centerHoriz + i + 1, centerVert + 1);
+			MapBox cell = east[i];
+			map.set(centerX + i + 2, centerY, cell.East);
+			map.set(centerX + i + 1, centerY - 1, cell.North);
+			map.set(centerX + i + 1, centerY + 1, cell.South);
 		}
-		for(int i = topOffset - 1; i >= 0; --i)
+		for(int i = northOffset - 1; i >= 0; --i)
 		{
-			MapBox cell = top[i];
-			map.set(cell.North, centerHoriz, centerVert - i - 2);
-			map.set(cell.West, centerHoriz - 1, centerVert - i - 1);
-			map.set(cell.East, centerHoriz + 1, centerVert - i - 1);
+			MapBox cell = north[i];
+			map.set(centerX, centerY - i - 2, cell.North);
+			map.set(centerX - 1, centerY - i - 1, cell.West);
+			map.set(centerX + 1, centerY - i - 1, cell.East);
 		}
-		for(int i = bottomOffset - 1; i >= 0; --i)
+		for(int i = southOffset - 1; i >= 0; --i)
 		{
-			MapBox cell = bottom[i];
-			map.set(cell.South, centerHoriz, centerVert + i + 2);
-			map.set(cell.West, centerHoriz - 1, centerVert + i + 1);
-			map.set(cell.East, centerHoriz + 1, centerVert + i + 1);
+			MapBox cell = south[i];
+			map.set(centerX, centerY + i + 2, cell.South);
+			map.set(centerX - 1, centerY + i + 1, cell.West);
+			map.set(centerX + 1, centerY + i + 1, cell.East);
 		}
 		
 		MapBox current = vision.CurrentPoint;
-		if(current.hasKey())
-		{
-			map.set(BoxType.Key, centerHoriz, centerVert);
-		}
-		else
-		{
-			map.set(BoxType.Open, centerHoriz, centerVert);
-		}
+
+		map.set(centerX, centerY, current.hasKey() ? BoxType.Key : BoxType.Open);
 		
-		map.set(current.West, centerHoriz - 1, centerVert);
-		map.set(current.East, centerHoriz + 1, centerVert);
-		map.set(current.North, centerHoriz, centerVert - 1);
-		map.set(current.South, centerHoriz, centerVert + 1);
-		
-		map.setPlayerPosition(centerHoriz, centerVert);
-		if(vision.CurrentPoint.hasKey())
-		{
-			map.set(BoxType.Key, centerHoriz, centerVert);
-		}
-		else
-		{
-			map.set(BoxType.Open, centerHoriz, centerVert);	
-		}
+		map.set(centerX - 1, centerY, current.West);
+		map.set(centerX + 1, centerY, current.East);
+		map.set(centerX, centerY - 1, current.North);
+		map.set(centerX, centerY + 1, current.South);
 	}
 }
