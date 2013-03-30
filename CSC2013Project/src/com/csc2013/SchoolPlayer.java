@@ -73,13 +73,13 @@ public class SchoolPlayer
 		PlayerMap map = this.map;
 		MapPoint player = map.getPlayerPosition();
 		
-		Action exitAction = ActionAlgorithms.actionTo(player, BoxType.Exit);
+		Action exitAction = ActionAlgorithms.actionTo(map, player, BoxType.Exit);
 		if(exitAction != null)
 			return exitAction;
 		
 		if(keyCount < 8)
 		{
-			Action keyAction = ActionAlgorithms.actionTo(player, BoxType.Key);
+			Action keyAction = ActionAlgorithms.actionTo(map, player, BoxType.Key);
 			if(keyAction != null)
 				return keyAction;
 		}

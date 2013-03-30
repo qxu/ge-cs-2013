@@ -38,16 +38,6 @@ public class MapPoint
 	}
 	
 	/**
-	 * Gets the map referenced by this point.
-	 * 
-	 * @return the map referenced
-	 */
-	public PlayerMap getMap()
-	{
-		return this.map;
-	}
-	
-	/**
 	 * Gets the {@code BoxType} of this point.
 	 * 
 	 * @return the {@code BoxType} of this point

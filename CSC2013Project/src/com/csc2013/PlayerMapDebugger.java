@@ -273,10 +273,10 @@ public class PlayerMapDebugger
 		buttons.add(terminate);
 		buttonsFrame.add(buttons);
 		buttonsFrame.pack();
-		Rectangle rect = GraphicsEnvironment.getLocalGraphicsEnvironment()
+		Rectangle screenSize = GraphicsEnvironment.getLocalGraphicsEnvironment()
 				.getDefaultScreenDevice().getDefaultConfiguration().getBounds();
-		int x = (int)rect.getMaxX() - buttonsFrame.getWidth() - 200;
-		int y = (int)rect.getMaxY() - buttonsFrame.getHeight() - 100;
+		int x = (int)screenSize.getMaxX() - buttonsFrame.getWidth() - 200;
+		int y = (int)screenSize.getMaxY() - buttonsFrame.getHeight() - 100;
 		buttonsFrame.setLocation(x, y);
 		buttonsFrame.setFocusableWindowState(false);
 		buttonsFrame.setVisible(true);
@@ -466,7 +466,11 @@ public class PlayerMapDebugger
 				this.maxY = y;
 			}
 		}
+
+		private static final long serialVersionUID = -2734468942706583102L;
 	}
+	
+	
 	private static class TileSprites
 	{
 		private static final Image OPEN;

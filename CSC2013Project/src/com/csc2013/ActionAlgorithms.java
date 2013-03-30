@@ -8,17 +8,24 @@ import com.csc2013.DungeonMaze.BoxType;
 
 public class ActionAlgorithms
 {
-	public static Action actionTo(MapPoint start, BoxType type)
+	/**
+	 * Gets the best action to the closest {@code BoxType} destination.
+	 * 
+	 * @param map
+	 * @param start
+	 * @param dest
+	 * @return
+	 */
+	public static Action actionTo(PlayerMap map, MapPoint start, BoxType dest)
 	{
-		PlayerMap map = start.getMap();
-		Set<MapPoint> destPoints = map.find(type);
+		Set<MapPoint> destPoints = map.find(dest);
 		if(destPoints.isEmpty())
 			return null;
 		
 		if(destPoints.size() == 1) // use optimized AStar algorithm
 			return aStarAction(start, destPoints.iterator().next());
 		
-		Set<MapPath> paths = BFSearch.search(start, type, 0);
+		Set<MapPath> paths = BFSearch.search(start, dest, 0);
 		
 		if(paths.isEmpty())
 			return null;
