@@ -1,8 +1,5 @@
 package com.csc2013;
 
-import java.util.EnumSet;
-import java.util.Set;
-
 import org.newdawn.slick.SlickException;
 
 import com.csc2013.DungeonMaze.Action;
@@ -17,7 +14,7 @@ import com.csc2013.DungeonMaze.BoxType;
  */
 public class SchoolPlayer
 {
-	final PlayerMap map;
+	private final PlayerMap map;
 	
 	private Action lastMove;
 	
@@ -68,6 +65,9 @@ public class SchoolPlayer
 		return move;
 	}
 	
+	/*
+	 * Calculates the best move.
+	 */
 	private Action getMove(int keyCount, boolean lastAction)
 	{
 		PlayerMap map = this.map;
@@ -100,13 +100,19 @@ public class SchoolPlayer
 	}
 	
 
-	
-	
+	/*
+	 * Updates the player position by moving the player
+	 * in the map from the given move.
+	 */
 	private void updatePlayerPosition(Action move)
 	{
 		this.map.movePlayer(move);
 	}
 	
+	/*
+	 * Updates the map from the given vision around the
+	 * current player position.
+	 */
 	private void updateMap(PlayerVision vision)
 	{
 		MapPoint player = this.map.getPlayerPosition();

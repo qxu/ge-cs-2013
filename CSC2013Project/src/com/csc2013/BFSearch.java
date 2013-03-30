@@ -37,8 +37,8 @@ public class BFSearch
 	 * All delays are in milliseconds.
 	 */
 	static final double NEIGHBOR_SEARCH_DELAY = 0;
-	static final double PATH_SEARCH_DELAY = 0;
-	static final double FOUND_DEST_MARK_DELAY = 2;
+	static final double PATH_SEARCH_DELAY = 2;
+	static final double FOUND_DEST_MARK_DELAY = 80;
 	
 	/**
 	 * Searches for a {@code BoxType} from the given start point.
@@ -134,6 +134,9 @@ public class BFSearch
 							gScores.remove(samePath);
 							open.put(subPath, subPath);
 							gScores.put(subPath, gScore);
+							
+							debugger.markPoint(neighbor, Color.PINK);
+							debugger.waitForMarks(NEIGHBOR_SEARCH_DELAY);
 						}
 					}
 				}
