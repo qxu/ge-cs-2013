@@ -59,7 +59,7 @@ public class PlayerMapDebugger
 		}
 	}
 
-	private volatile long millisWasted = 0;
+	private volatile long millisBehind = 0;
 	
 	public void sleep(double millis)
 	{
@@ -68,12 +68,12 @@ public class PlayerMapDebugger
 			long stop = System.nanoTime() + (long)(millis * 1000000);
 			Thread.sleep((long)millis);
 			long stopTime = System.nanoTime();
-			if(millisWasted <= 0 && stopTime < stop)
+			if(millisBehind <= 0 && stopTime < stop)
 			{
 				Thread.sleep(1);
 				stopTime = System.nanoTime();
 			}
-			millisWasted += (stopTime - stop);
+			millisBehind += (stopTime - stop);
 		}
 		catch(InterruptedException e)
 		{
