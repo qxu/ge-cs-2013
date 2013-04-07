@@ -15,6 +15,7 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.ConcurrentModificationException;
 import java.util.List;
 import java.util.Map;
@@ -42,12 +43,12 @@ public class PlayerMapDebugger
 	
 	private final PlayerMap map;
 	
-	private JFrame mapFrame;
+	private JDialog mapFrame;
 	private MapDebugPanel mapPanel;
-	private JDialog buttonsFrame;
+	private static JFrame buttonsFrame;
 	
 	private Map<MapPoint, Color> markedPoints = new ConcurrentHashMap<>();
-	private Map<List<MapPoint>, Color> markedPaths = new ConcurrentHashMap<>();
+	private Map<MapPath, Color> markedPaths = new ConcurrentHashMap<>();
 	private Map<MapPoint, String> stringMarks = new ConcurrentHashMap<>();
 	
 	public PlayerMapDebugger(PlayerMap map)
@@ -58,7 +59,7 @@ public class PlayerMapDebugger
 			initSwingComponents();
 		}
 	}
-
+	
 	private volatile long millisBehind = 0;
 	
 	public void sleep(double millis)
@@ -87,6 +88,7 @@ public class PlayerMapDebugger
 		{
 			if(millis > 0)
 			{
+				this.mapPanel.repaint();
 				sleep(millis);
 			}
 		}
@@ -131,7 +133,7 @@ public class PlayerMapDebugger
 			{
 				color = Color.GRAY;
 			}
-			this.markedPaths.put(path.toList(), color);
+			this.markedPaths.put(path, color);
 			updateMarks();
 		}
 	}
@@ -140,7 +142,7 @@ public class PlayerMapDebugger
 	{
 		if(DEBUG_MARKS)
 		{
-			this.markedPaths.remove(path.toList());
+			this.markedPaths.remove(path);
 			updateMarks();
 		}
 	}
@@ -150,6 +152,7 @@ public class PlayerMapDebugger
 		if(DEBUG_MARKS)
 		{
 			this.markedPaths.clear();
+			updateMarks();
 		}
 	}
 	
@@ -158,6 +161,7 @@ public class PlayerMapDebugger
 		if(DEBUG_MARKS)
 		{
 			this.stringMarks.put(point, text);
+			updateMarks();
 		}
 	}
 	
@@ -166,6 +170,7 @@ public class PlayerMapDebugger
 		if(DEBUG_MARKS)
 		{
 			this.stringMarks.remove(point);
+			updateMarks();
 		}
 	}
 	
@@ -174,22 +179,11 @@ public class PlayerMapDebugger
 		if(DEBUG_MARKS)
 		{
 			this.stringMarks.clear();
+			updateMarks();
 		}
 	}
 	
-	private boolean finishedMap()
-	{
-		MapPoint player = map.getPlayerPosition();
-		
-		for(MapPoint point : player.getNeighbors())
-		{
-			if(point.getType() == BoxType.Exit)
-				return true;
-		}
-		return false;
-	}
-	
-	public void updateMarks()
+	private void updateMarks()
 	{
 		if(DEBUG_MAP && DEBUG_MARKS)
 		{
@@ -197,98 +191,21 @@ public class PlayerMapDebugger
 		}
 	}
 	
-	public void repaintMap()
-	{
-		if(DEBUG_MAP)
-		{
-			this.mapPanel.repaint();
-			
-			if(finishedMap())
-			{
-				this.mapFrame.dispose();
-			}
-		}
-	}
-	
 	private void initSwingComponents()
 	{
-		try
-		{
-			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-		}
-		catch(ClassNotFoundException | InstantiationException
-				| IllegalAccessException | UnsupportedLookAndFeelException e1)
-		{
-			// watermelons
-		}
-		
 		this.mapPanel = new MapDebugPanel();
 		
-		this.mapFrame = new JFrame("DEBUG - player map");
-		this.mapFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+		this.mapFrame = new JDialog(buttonsFrame, "DEBUG - player map");
+		this.mapFrame.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 		this.mapFrame.add(this.mapPanel);
 		this.mapFrame.pack();
+		this.mapFrame.setResizable(false);
 		this.mapFrame.setFocusableWindowState(false);
 		this.mapFrame.setVisible(true);
-		this.mapFrame.setFocusableWindowState(true);
-		
-		buttonsFrame = new JDialog(mapFrame, "buttons");
-		buttonsFrame.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
-		JPanel buttons = new JPanel();
-		buttons.setLayout(new BoxLayout(buttons, BoxLayout.PAGE_AXIS));
-		final JButton pause = new JButton("pause");
-		pause.addActionListener(new ActionListener()
-		{
-			@Override
-			public void actionPerformed(ActionEvent e)
-			{
-				if(pause.getText().equals("pause"))
-				{
-					pause.setText("resume");
-					BFSearch.pause();
-					AStarSearch.pause();
-					Tournament.container.pause();
-				}
-				else
-				{
-					pause.setText("pause");
-					BFSearch.resume();
-					AStarSearch.resume();
-					Tournament.container.resume();
-				}
-			}
-		});
-		pause.setAlignmentX(Component.CENTER_ALIGNMENT);
-		final JButton terminate = new JButton("terminate");
-		terminate.addActionListener(new ActionListener()
-		{
-			@Override
-			public void actionPerformed(ActionEvent e)
-			{
-				System.exit(0);
-			}
-		});
-		terminate.setAlignmentX(Component.CENTER_ALIGNMENT);
-		buttons.add(pause);
-		buttons.add(terminate);
-		buttonsFrame.add(buttons);
-		buttonsFrame.pack();
-		Rectangle screenSize = GraphicsEnvironment.getLocalGraphicsEnvironment()
-				.getDefaultScreenDevice().getDefaultConfiguration().getBounds();
-		int x = (int)screenSize.getMaxX() - buttonsFrame.getWidth() - 200;
-		int y = (int)screenSize.getMaxY() - buttonsFrame.getHeight() - 100;
-		buttonsFrame.setLocation(x, y);
-		buttonsFrame.setFocusableWindowState(false);
-		buttonsFrame.setVisible(true);
 	}
 	
 	private class MapDebugPanel extends JPanel
 	{
-		private int minX = 0;
-		private int minY = 0;
-		private int maxX = 0;
-		private int maxY = 0;
-		
 		public MapDebugPanel()
 		{
 			super();
@@ -333,10 +250,37 @@ public class PlayerMapDebugger
 		{
 			Set<MapPoint> grid = PlayerMapDebugger.this.map.getGrid();
 			
+			int minX = 0;
+			int minY = 0;
+			int maxX = 0;
+			int maxY = 0;
+			
 			for(MapPoint point : grid)
 			{
-				checkBounds(point);
+				int x = point.x;
+				int y = point.y;
+				if(x < minX)
+				{
+					minX = x;
+				}
+				if(x > maxX)
+				{
+					maxX = x;
+				}
+				if(y < minY)
+				{
+					minY = y;
+				}
+				if(y > maxY)
+				{
+					maxY = y;
+				}
 			}
+			
+			--minX;
+			--minY;
+			++maxX;
+			++maxY;
 			
 			PlayerMap map = PlayerMapDebugger.this.map;
 			
@@ -390,10 +334,10 @@ public class PlayerMapDebugger
 					g.fillRect(x, y, markWidth, markHeight);
 				}
 
-				for(Map.Entry<List<MapPoint>, Color> entry : PlayerMapDebugger.this.markedPaths
+				for(Map.Entry<MapPath, Color> entry : PlayerMapDebugger.this.markedPaths
 						.entrySet())
 				{
-					List<MapPoint> path = entry.getKey();
+					List<MapPoint> path = entry.getKey().toList();
 					g.setColor(entry.getValue());
 					int numOfPoints = path.size();
 					MapPoint prev = path.get(0);
@@ -422,7 +366,6 @@ public class PlayerMapDebugger
 			}
 		}
 		
-
 		private Image getPaintImage(BoxType tile)
 		{
 			if(tile == null)
@@ -445,31 +388,99 @@ public class PlayerMapDebugger
 			}
 		}
 		
-		private void checkBounds(MapPoint point)
-		{
-			int x = point.x;
-			int y = point.y;
-			if(x < this.minX)
-			{
-				this.minX = x;
-			}
-			if(x > this.maxX)
-			{
-				this.maxX = x;
-			}
-			if(y < this.minY)
-			{
-				this.minY = y;
-			}
-			if(y > this.maxY)
-			{
-				this.maxY = y;
-			}
-		}
-
 		private static final long serialVersionUID = -2734468942706583102L;
 	}
 	
+	static
+	{
+		try
+		{
+			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+		}
+		catch(ClassNotFoundException | InstantiationException
+				| IllegalAccessException | UnsupportedLookAndFeelException e1)
+		{
+			// watermelons
+		}
+		
+		buttonsFrame = new JFrame("DEBUG");
+		JPanel buttons = new JPanel();
+		buttons.setLayout(new BoxLayout(buttons, BoxLayout.PAGE_AXIS));
+		final JButton pause = new JButton("pause");
+		pause.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				if(pause.getText().equals("pause"))
+				{
+					pause.setText("resume");
+					BFSearch.pause();
+					AStarSearch.pause();
+				}
+				else
+				{
+					pause.setText("pause");
+					BFSearch.resume();
+					AStarSearch.resume();
+				}
+			}
+		});
+		pause.setAlignmentX(Component.CENTER_ALIGNMENT);
+		final JButton terminate = new JButton("terminate");
+		terminate.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				System.exit(0);
+			}
+		});
+		terminate.setAlignmentX(Component.CENTER_ALIGNMENT);
+		buttons.add(pause);
+		buttons.add(terminate);
+		buttonsFrame.add(buttons);
+		buttonsFrame.pack();
+		Rectangle screenSize = GraphicsEnvironment.getLocalGraphicsEnvironment()
+				.getDefaultScreenDevice().getDefaultConfiguration().getBounds();
+		int x = (int)screenSize.getMaxX() - buttonsFrame.getWidth() - 200;
+		int y = (int)screenSize.getMaxY() - buttonsFrame.getHeight() - 100;
+		buttonsFrame.setLocation(x, y);
+		buttonsFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		buttonsFrame.setFocusableWindowState(false);
+		buttonsFrame.setVisible(true);
+		buttonsFrame.setFocusableWindowState(true);
+		
+		new Thread(new Runnable()
+		{
+			@Override
+			public void run()
+			{
+				while(true)
+				{
+					Thread[] tarray = new Thread[Thread.activeCount()];
+					
+					Thread.enumerate(tarray);
+					
+					for(Thread t : tarray)
+					{
+						if(t.getName().equals("DestroyJavaVM"))
+						{
+							System.exit(0);
+						}
+					}
+					
+					try
+					{
+						Thread.sleep(2000);
+					}
+					catch(InterruptedException e)
+					{
+					}
+				}
+			}
+		}).start();
+	}
 	
 	private static class TileSprites
 	{

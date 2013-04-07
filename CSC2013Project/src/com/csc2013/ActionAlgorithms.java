@@ -30,14 +30,39 @@ public class ActionAlgorithms
 		if(paths.isEmpty())
 			return null;
 		
+		Set<Action> moves = EnumSet.noneOf(Action.class);
 		for(MapPath path : paths)
 		{
-			Action move = getPathAction(path);
+			moves.add(getPathAction(path));
+		}
+
+		Set<Action> desirable = EnumSet.noneOf(Action.class);
+		
+		for(Action move : moves)
+		{
 			if(desirableEndResult(start, move))
-				return move;
+			{
+				desirable.add(move);
+			}
 		}
 		
-		return getPathAction(paths.iterator().next());
+		if(!desirable.isEmpty())
+		{
+			if(desirable.size() == 1)
+			{
+				return desirable.iterator().next();
+			}
+			else
+			{
+				System.out.println("not sure which desiarable");
+				return desirable.iterator().next();
+			}
+		}
+		else
+		{
+			System.out.println("not sure which");
+			return moves.iterator().next();
+		}
 	}
 	
 	private static Action getPathAction(MapPath path)
@@ -55,6 +80,14 @@ public class ActionAlgorithms
 		return getPathAction(path);
 	}
 	
+	/**
+	 * Finds the best action to explore the unknown.
+	 * 
+	 * @param start
+	 * @param lastMove
+	 * @param keyCount
+	 * @return
+	 */
 	public static Action discoveryChannel(MapPoint start, Action lastMove, int keyCount)
 	{
 		Set<MapPath> paths = BFSearch.search(start, null, keyCount);
@@ -67,18 +100,56 @@ public class ActionAlgorithms
 		{
 			moves.add(getPathAction(path));
 		}
+
+		if(moves.contains(lastMove))
+		{
+			return lastMove;
+		}
+		
+		Set<Action> desirable = EnumSet.noneOf(Action.class);
 		
 		for(Action move : moves)
 		{
 			if(desirableEndResult(start, move))
-				return move;
+			{
+				desirable.add(move);
+			}
 		}
 		
-		if(moves.contains(lastMove))
-			return lastMove;
-		
-		System.out.println("not sure which");
-		return moves.iterator().next();
+		if(!desirable.isEmpty())
+		{
+			if(desirable.size() == 1)
+			{
+				return desirable.iterator().next();
+			}
+			else if(desirable.contains(lastMove))
+			{
+				return lastMove;
+			}
+			else
+			{
+				System.out.println("not sure which desiarable");
+				return desirable.iterator().next();
+			}
+		}
+		else
+		{
+			System.out.println("not sure which");
+			return moves.iterator().next();
+		}
+	}
+	
+	private static int endDistance(MapPoint start, Action move)
+	{
+		int distance = 0;
+		MapPoint cur = start;
+		while(cur.getType() != BoxType.Blocked && cur.getType() != null)
+		{
+			MapPoint next = cur.execute(move);
+			cur = next;
+			++distance;
+		}
+		return distance;
 	}
 	
 	private static boolean desirableEndResult(MapPoint start, Action move)

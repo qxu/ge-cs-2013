@@ -40,7 +40,7 @@ public class AStarSearch
 	 */
 	static final double NEIGHBOR_SEARCH_DELAY = BFSearch.NEIGHBOR_SEARCH_DELAY;
 	static final double PATH_SEARCH_DELAY = BFSearch.PATH_SEARCH_DELAY;
-	static final double FOUND_DEST_MARK_DELAY = BFSearch.FOUND_DEST_MARK_DELAY;
+	static final double FINAL_DELAY = BFSearch.FINAL_DELAY + BFSearch.FOUND_DEST_MARK_DELAY;
 
 	/**
 	 * Calculates the optimal path from {@code MapPoint} start to
@@ -89,7 +89,7 @@ public class AStarSearch
 			{
 				debugger.markPoint(curPoint, Color.GREEN);
 				debugger.markPath(cur, Color.GREEN);
-				debugger.waitForMarks(FOUND_DEST_MARK_DELAY);
+				debugger.waitForMarks(FINAL_DELAY);
 				
 				debugger.unmarkAllPoints();
 				debugger.unmarkAllPaths();
@@ -98,17 +98,14 @@ public class AStarSearch
 			}
 			
 			closed.add(curPoint);
+
+			while(paused)
+			{
+				debugger.sleep(200);
+			}
 			
 			for(MapPoint neighbor : getNeighbors(cur.getLastPoint(), dest))
 			{
-				if(paused)
-				{
-					while(paused)
-					{
-						debugger.sleep(200);
-					}
-				}
-				
 				int gScore = gScores.get(curPoint) + distanceTo(neighbor);
 				if(closed.contains(neighbor))
 				{
@@ -132,11 +129,8 @@ public class AStarSearch
 				}
 			}
 			
-			if(!curPoint.equals(dest))
-			{
-				debugger.unmarkPath(cur);
-				debugger.markPoint(curPoint, Color.LIGHT_GRAY);
-			}
+			debugger.unmarkPath(cur);
+			debugger.markPoint(curPoint, Color.LIGHT_GRAY);
 		}
 		
 		debugger.unmarkAllPoints();

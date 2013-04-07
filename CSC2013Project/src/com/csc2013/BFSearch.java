@@ -37,8 +37,9 @@ public class BFSearch
 	 * All delays are in milliseconds.
 	 */
 	static final double NEIGHBOR_SEARCH_DELAY = 0;
-	static final double PATH_SEARCH_DELAY = 2;
-	static final double FOUND_DEST_MARK_DELAY = 80;
+	static final double PATH_SEARCH_DELAY = 0;
+	static final double FOUND_DEST_MARK_DELAY = 0;
+	static final double FINAL_DELAY = 80;
 	
 	/**
 	 * Searches for a {@code BoxType} from the given start point.
@@ -77,6 +78,7 @@ public class BFSearch
 			debugger.markPath(cur, Color.DARK_GRAY);
 			debugger.waitForMarks(PATH_SEARCH_DELAY);
 			
+			boolean shouldUnmark = true;
 			if(curPoint.getType() == dest)
 			{
 				if(foundG == null || curEntry.getValue().compareTo(foundG) <= 0)
@@ -87,6 +89,8 @@ public class BFSearch
 
 					found.add(cur);
 					foundG = curEntry.getValue();
+					
+					shouldUnmark = false;
 				}
 			}
 			
@@ -94,18 +98,15 @@ public class BFSearch
 			gScores.remove(cur);
 			closed.add(curPoint);
 			
+			while(paused)
+			{
+				debugger.sleep(200);
+			}
+			
 			if(found.isEmpty())
 			{
 				for(MapPoint neighbor : getNeighbors(curPoint, dest, keyCount))
 				{
-					if(paused)
-					{
-						while(paused)
-						{
-							debugger.sleep(200);
-						}
-					}
-					
 					if(closed.contains(neighbor))
 					{
 						continue;
@@ -142,13 +143,13 @@ public class BFSearch
 				}
 			}
 			
-			if(curPoint.getType() != dest)
+			if(shouldUnmark)
 			{
 				debugger.unmarkPath(cur);
 				debugger.markPoint(curPoint, Color.LIGHT_GRAY);
 			}
 		}
-		
+		debugger.waitForMarks(FINAL_DELAY);
 		debugger.unmarkAllPoints();
 		debugger.unmarkAllPaths();
 		return found;

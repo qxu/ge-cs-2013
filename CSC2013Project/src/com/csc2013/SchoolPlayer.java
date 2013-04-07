@@ -51,16 +51,15 @@ public class SchoolPlayer
 		
 		Action move = getMove(keyCount, lastAction);
 		
-		if(vision.CurrentPoint.hasKey() != (this.map.getPlayerPosition().getType() == BoxType.Key))
-			throw new AssertionError("key not dectected");
+//		if(vision.CurrentPoint.hasKey() != (this.map.getPlayerPosition().getType() == BoxType.Key))
+//			throw new AssertionError("key not dectected");
 		
 		if(this.map.getPlayerPosition().execute(move).getType() == BoxType.Door)
 		{
-			System.out.println("Use Action detected"); // TODO make the algorithms detect a door automatically
 			move = Action.Use;
 		}
 
-		updatePlayerPosition(move);
+		this.map.movePlayer(move);
 		this.lastMove = move;
 		return move;
 	}
@@ -96,17 +95,7 @@ public class SchoolPlayer
 			return coverSpaceAction;
 		
 		System.out.println("??");
-		throw new RuntimeException("don't know what to do");
-	}
-	
-
-	/*
-	 * Updates the player position by moving the player
-	 * in the map from the given move.
-	 */
-	private void updatePlayerPosition(Action move)
-	{
-		this.map.movePlayer(move);
+		throw new RuntimeException("out of moves");
 	}
 	
 	/*
