@@ -52,15 +52,19 @@ public class SchoolPlayer
 		Action move = getMove(keyCount, lastAction);
 		
 //		if(vision.CurrentPoint.hasKey() != (this.map.getPlayerPosition().getType() == BoxType.Key))
-//			throw new AssertionError("key not dectected");
+//			throw new AssertionError("key not detected");
 		
 		if(this.map.getPlayerPosition().execute(move).getType() == BoxType.Door)
 		{
 			move = Action.Use;
 		}
-
-		this.map.movePlayer(move);
-		this.lastMove = move;
+		
+		if(move != Action.Use && move != Action.Pickup)
+		{
+			this.map.movePlayer(move);
+			this.lastMove = move;
+		}
+		
 		return move;
 	}
 	
@@ -72,13 +76,13 @@ public class SchoolPlayer
 		PlayerMap map = this.map;
 		MapPoint player = map.getPlayerPosition();
 		
-		Action exitAction = ActionAlgorithms.actionTo(map, player, BoxType.Exit);
+		Action exitAction = ActionAlgorithms.actionTo(map, lastMove, player, BoxType.Exit);
 		if(exitAction != null)
 			return exitAction;
 		
 		if(keyCount < 8)
 		{
-			Action keyAction = ActionAlgorithms.actionTo(map, player, BoxType.Key);
+			Action keyAction = ActionAlgorithms.actionTo(map, lastMove, player, BoxType.Key);
 			if(keyAction != null)
 				return keyAction;
 		}

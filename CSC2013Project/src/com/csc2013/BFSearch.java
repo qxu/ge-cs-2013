@@ -39,7 +39,7 @@ public class BFSearch
 	static final double NEIGHBOR_SEARCH_DELAY = 0;
 	static final double PATH_SEARCH_DELAY = 0;
 	static final double FOUND_DEST_MARK_DELAY = 0;
-	static final double FINAL_DELAY = 80;
+	static final double FINAL_DELAY = 200;
 	
 	/**
 	 * Searches for a {@code BoxType} from the given start point.
