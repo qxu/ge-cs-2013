@@ -15,10 +15,6 @@ public class MapPath
 	private final Action prevMove;
 	private final int turnCount;
 	
-	// TODO: implement these
-	private final int numOfSteps = 0;
-	private final int keyCount = 0;
-	
 	/**
 	 * Constructs a base path from the given point.
 	 * 

@@ -1,6 +1,7 @@
 package com.csc2013;
 
 import java.awt.Color;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -14,26 +15,6 @@ import com.csc2013.DungeonMaze.BoxType;
 
 public class AStarSearch
 {
-	private static volatile boolean paused = false;
-	
-	/**
-	 * Halts the search algorithm. The algorithm will not start/resume
-	 * until {@code AStarSearch.resume()} is called. This is useful for
-	 * debugging purposes.
-	 */
-	public static void pause()
-	{
-		paused = true;
-	}
-	
-	/**
-	 * Used to resume the search algorithm to normal operation. This is
-	 * useful for debugging purposes.
-	 */
-	public static void resume()
-	{
-		paused = false;
-	}
 	
 	/*
 	 * All delays are in milliseconds.
@@ -41,17 +22,41 @@ public class AStarSearch
 	static final double NEIGHBOR_SEARCH_DELAY = BFSearch.NEIGHBOR_SEARCH_DELAY;
 	static final double PATH_SEARCH_DELAY = BFSearch.PATH_SEARCH_DELAY;
 	static final double FINAL_DELAY = BFSearch.FINAL_DELAY + BFSearch.FOUND_DEST_MARK_DELAY;
-
+	
+	private static volatile boolean paused = false;
+	
+	/**
+	 * Halts the search algorithm. The algorithm will not start/resume until
+	 * {@code AStarSearch.resume()} is called. This is useful for debugging
+	 * purposes.
+	 */
+	public static void pause()
+	{
+		paused = true;
+	}
+	
+	/**
+	 * Used to resume the search algorithm to normal operation. This is useful
+	 * for debugging purposes.
+	 */
+	public static void resume()
+	{
+		paused = false;
+	}
+	
 	/**
 	 * Calculates the optimal path from {@code MapPoint} start to
 	 * {@code MapPoint} dest. The search algorithm used is the A* search
 	 * algorithm.
 	 * 
-	 * @param start the starting point
-	 * @param dest the destination point
+	 * @param start
+	 *            the starting point
+	 * @param dest
+	 *            the destination point
 	 * @return the optimal path
 	 * 
-	 * @see <a href="http://en.wikipedia.org/wiki/A*_search_algorithm">A* search algorithm - Wikipedia</a>
+	 * @see <a href="http://en.wikipedia.org/wiki/A*_search_algorithm">Asearch
+	 *      algorithm - Wikipedia</a>
 	 */
 	public static MapPath search(MapPoint start, final MapPoint dest)
 	{
@@ -82,8 +87,8 @@ public class AStarSearch
 			MapPoint curPoint = cur.getLastPoint();
 			
 			debugger.markPoint(cur.getLastPoint(), Color.MAGENTA);
-				debugger.markPath(cur, Color.DARK_GRAY);
-				debugger.waitForMarks(PATH_SEARCH_DELAY);
+			debugger.markPath(cur, Color.DARK_GRAY);
+			debugger.waitForMarks(PATH_SEARCH_DELAY);
 			
 			if(curPoint.equals(dest))
 			{
@@ -94,11 +99,11 @@ public class AStarSearch
 				debugger.unmarkAllPoints();
 				debugger.unmarkAllPaths();
 				debugger.stringUnmarkAll();
-				return cur; //TODO fix add paths
+				return cur;
 			}
 			
 			closed.add(curPoint);
-
+			
 			while(paused)
 			{
 				debugger.sleep(200);
@@ -138,20 +143,30 @@ public class AStarSearch
 		debugger.stringUnmarkAll();
 		return null;
 	}
-
+	
+	/*
+	 * Returns the Manhattan distance from a point to a destination.
+	 */
 	private static int heuristicEstimate(MapPoint point, MapPoint dest)
 	{
 		return point.distanceTo(dest);
 	}
 	
+	/*
+	 * The g score to add to a point by moving one step.
+	 */
 	private static int distanceTo(MapPoint point)
 	{
 		return 1;
 	}
 	
+	/*
+	 * Gets the neighbors of a point disregarding points that cannot be
+	 * reached.
+	 */
 	private static Iterable<MapPoint> getNeighbors(MapPoint point, MapPoint dest)
 	{
-		Collection<MapPoint> neighbors = new HashSet<>(4);
+		Collection<MapPoint> neighbors = new ArrayList<>(4); //lol, the only time we use an ArrayList
 		for(MapPoint neighbor : point.getNeighbors())
 		{
 			if(neighbor != null)

@@ -21,7 +21,8 @@ public class ActionAlgorithms
 	 * @param dest
 	 * @return
 	 */
-	public static Action actionTo(PlayerMap map, Action lastMove, MapPoint start,
+	public static Action actionTo(PlayerMap map, Action lastMove,
+			MapPoint start,
 			BoxType dest)
 	{
 		Set<MapPoint> destPoints = map.find(dest);
@@ -50,16 +51,16 @@ public class ActionAlgorithms
 	 */
 	private static Action getPathAction(MapPath path)
 	{
-		final MapPoint player = path.toList().get(0);
-		final MapPoint point = path.getStepPath().getLastPoint();
+		MapPoint player = path.toList().get(0);
+		MapPoint point = path.getStepPath().getLastPoint();
 		if(player.equals(point))
 			return Action.Pickup;
 		return player.actionTo(point);
 	}
 	
 	/*
-	 * Returns the action to get from a starting point to a destination
-	 * point.
+	 * Returns the action to get from a starting point to a destination point
+	 * using the a* algorithm.
 	 */
 	private static Action aStarAction(MapPoint start, MapPoint dest)
 	{
@@ -78,6 +79,7 @@ public class ActionAlgorithms
 	public static Action discoveryChannel(MapPoint start, Action lastMove,
 			int keyCount)
 	{
+		// null is an unknown
 		Set<MapPath> paths = BFSearch.search(start, null, keyCount);
 		
 		if(paths.isEmpty())
@@ -92,13 +94,19 @@ public class ActionAlgorithms
 		return chooseBestMove(start, lastMove, moves);
 	}
 	
-	private static Action chooseBestMove(MapPoint start, Action lastMove, Set<Action> moves)
+	/*
+	 * Chooses the best move from a set of moves.
+	 */
+	private static Action chooseBestMove(MapPoint start, Action lastMove,
+			Set<Action> moves)
 	{
+		// continue in the same direction, if possible
+		// this way, we explore edges and corners efficiently
+		// and we avoid the "zigzag effect"
 		if(moves.contains(lastMove))
 			return lastMove;
 		
 		Set<Action> desirable = EnumSet.noneOf(Action.class);
-		
 		for(Action move : moves)
 		{
 			if(desirableEndResult(start, move))
@@ -110,29 +118,27 @@ public class ActionAlgorithms
 		if(!desirable.isEmpty())
 		{
 			if(desirable.size() == 1)
-			{
 				return desirable.iterator().next();
-			}
-			else if(desirable.contains(lastMove))
-			{
-				return lastMove;
-			}
 			else
 			{
+				// prefer east and south to other directions.
 				if(desirable.contains(Action.East))
 					return Action.East;
 				else if(desirable.contains(Action.South))
-					return Action.South;	
-				return desirable.iterator().next();
+					return Action.South;
+				else
+					return desirable.iterator().next();
 			}
 		}
 		else
 		{
+			// like above, prefer east and south to other directions.
 			if(moves.contains(Action.East))
 				return Action.East;
 			else if(moves.contains(Action.South))
 				return Action.South;
-			return moves.iterator().next();
+			else
+				return moves.iterator().next();
 		}
 	}
 	
@@ -144,16 +150,25 @@ public class ActionAlgorithms
 	{
 		MapPoint cur = start;
 		if(move == Action.Pickup)
-		{
 			return cur.getType() == BoxType.Key;
-		}
-		while(cur.getType() != BoxType.Blocked && cur.getType() != null)
+		
+		// this loop gets the result BoxType after continuing to
+		// travel in 'move' until it hits
+		while(canTravelOn(cur.getType()))
 		{
 			MapPoint next = cur.execute(move);
 			if(next.equals(cur))
 				return false;
 			cur = next;
 		}
+		
+		// if the end result is unknown, then more space is explored.
 		return cur.getType() == null;
+	}
+	
+	private static boolean canTravelOn(BoxType type)
+	{
+		// BoxTypes Open and Key can be traveled on.
+		return type == BoxType.Open || type == BoxType.Key;
 	}
 }

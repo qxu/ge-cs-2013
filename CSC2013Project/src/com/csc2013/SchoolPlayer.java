@@ -1,7 +1,5 @@
 package com.csc2013;
 
-import org.newdawn.slick.SlickException;
-
 import com.csc2013.DungeonMaze.Action;
 import com.csc2013.DungeonMaze.BoxType;
 
@@ -14,8 +12,15 @@ import com.csc2013.DungeonMaze.BoxType;
  */
 public class SchoolPlayer
 {
+	/*
+	 * A map to store the points with their BoxTypes.
+	 */
 	private final PlayerMap map;
 	
+	/*
+	 * The last directional move.
+	 * This means we ignore Action.Pickup and Action.Open
+	 */
 	private Action lastMove;
 	
 	private static SchoolPlayer latestInstance;
@@ -26,11 +31,9 @@ public class SchoolPlayer
 	}
 	
 	/**
-	 * Constructor.
-	 * 
-	 * @throws SlickException
+	 * Creates a {@code SchoolPlayer}.
 	 */
-	public SchoolPlayer() throws SlickException
+	public SchoolPlayer()
 	{
 		latestInstance = this;
 		this.map = new PlayerMap();
@@ -38,7 +41,11 @@ public class SchoolPlayer
 	
 	/**
 	 * Gets the move.<br>
-	 * Updates the map.
+	 * Updates the map.<br>
+	 * <br>
+	 * If an exit is found, the action to the nearest exit is returned. Then the
+	 * algorithm searches for keys, then for unknown spaces. Doors are unlocked
+	 * as necessary to explore the unknown spaces.
 	 * 
 	 * @param vision
 	 * @param keyCount
@@ -69,42 +76,47 @@ public class SchoolPlayer
 	}
 	
 	/*
-	 * Calculates the best move.
+	 * Calculates the best move. It tries to find an exit, then it tries to find
+	 * a key, then it tries to uncover space.
 	 */
 	private Action getMove(int keyCount, boolean lastAction)
 	{
 		PlayerMap map = this.map;
 		MapPoint player = map.getPlayerPosition();
 		
-		Action exitAction = ActionAlgorithms.actionTo(map, lastMove, player, BoxType.Exit);
+		Action exitAction = ActionAlgorithms
+				.actionTo(map, this.lastMove, player, BoxType.Exit);
 		if(exitAction != null)
 			return exitAction;
 		
 		if(keyCount < 8)
 		{
-			Action keyAction = ActionAlgorithms.actionTo(map, lastMove, player, BoxType.Key);
+			Action keyAction = ActionAlgorithms.actionTo(map, this.lastMove,
+					player,
+					BoxType.Key);
 			if(keyAction != null)
 				return keyAction;
 		}
 		
-//		if(keyCount > 0)
-//		{
-//			Action doorAction = this.map.actionTo(BoxType.Door);
-//			if(doorAction != null)
-//				return doorAction;
-//		}
-		
-		Action coverSpaceAction = ActionAlgorithms.discoveryChannel(player, this.lastMove, keyCount);
+		Action coverSpaceAction = ActionAlgorithms.discoveryChannel(player,
+				this.lastMove, keyCount);
 		if(coverSpaceAction != null)
 			return coverSpaceAction;
 		
-		System.out.println("??");
+		System.out.println("?!!?!");
 		throw new RuntimeException("out of moves");
 	}
 	
 	/*
-	 * Updates the map from the given vision around the
-	 * current player position.
+	 * Updates the map's BoxTypes from the given vision around the current
+	 * player position.
+	 * 
+	 * So some grid geometry got us those coordinates to update around each
+	 * point.
+	 * 
+	 * You might wonder why we have to subtract/add 1 to the the x/y coordinate.
+	 * That's because the west, east, north, and south arrays start at index 0,
+	 * but at index 0, the point is distance 1 from the player.
 	 */
 	private void updateMap(PlayerVision vision)
 	{

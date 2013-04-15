@@ -13,11 +13,19 @@ import com.csc2013.DungeonMaze.BoxType;
 
 public class BFSearch
 {
+	/*
+	 * All delays are in milliseconds.
+	 */
+	static final double NEIGHBOR_SEARCH_DELAY = 0;
+	static final double PATH_SEARCH_DELAY = 20;
+	static final double FOUND_DEST_MARK_DELAY = 0;
+	static final double FINAL_DELAY = 80;
+	
 	private static volatile boolean paused = false;
 	
 	/**
-	 * Halts the search algorithm. The algorithm will not start/resume
-	 * until {@code BFSearch.resume()} is called.
+	 * Halts the search algorithm. The algorithm will not start/resume until
+	 * {@code BFSearch.resume()} is called.
 	 */
 	public static void pause()
 	{
@@ -25,34 +33,29 @@ public class BFSearch
 	}
 	
 	/**
-	 * Used to resume the search algorithm to normal operation. This is
-	 * useful for debugging purposes.
+	 * Used to resume the search algorithm to normal operation. This is useful
+	 * for debugging purposes.
 	 */
 	public static void resume()
 	{
 		paused = false;
 	}
-
-	/*
-	 * All delays are in milliseconds.
-	 */
-	static final double NEIGHBOR_SEARCH_DELAY = 0;
-	static final double PATH_SEARCH_DELAY = 0;
-	static final double FOUND_DEST_MARK_DELAY = 0;
-	static final double FINAL_DELAY = 200;
 	
 	/**
-	 * Searches for a {@code BoxType} from the given start point.
-	 * The search algorithm used is a Breath-first search (BFS) modified
-	 * to use a past path-cost function g(x) to determine the next point
-	 * to evaluate.
+	 * Searches for a {@code BoxType} from the given start point. The search
+	 * algorithm used is a Breath-first search (BFS) modified to use a past
+	 * path-cost function g(x) to determine the next point to evaluate.
 	 * 
-	 * @param start the starting point
-	 * @param dest the {@code BoxType} to search for
+	 * @param start
+	 *            the starting point
+	 * @param dest
+	 *            the {@code BoxType} to search for
 	 * @param hasKey
 	 * @return the set of solution MapPaths
 	 * 
-	 * @see <a href="http://en.wikipedia.org/wiki/Breadth-first_search">Breadth-first search - Wikipedia</a>
+	 * @see <a
+	 *      href="http://en.wikipedia.org/wiki/Breadth-first_search">Breadth-first
+	 *      search - Wikipedia</a>
 	 */
 	public static Set<MapPath> search(MapPoint start, BoxType dest, int keyCount)
 	{
@@ -86,7 +89,7 @@ public class BFSearch
 					debugger.markPoint(curPoint, Color.GREEN);
 					debugger.markPath(cur, Color.GREEN);
 					debugger.waitForMarks(FOUND_DEST_MARK_DELAY);
-
+					
 					found.add(cur);
 					foundG = curEntry.getValue();
 					
@@ -155,6 +158,13 @@ public class BFSearch
 		return found;
 	}
 	
+	/*
+	 * Since opening a door takes two steps, the algorithm can't just add
+	 * one to get the g score of the next point. There is a penalty for
+	 * going through doors. The same thing is not as severe for keys, and we
+	 * wouldn't want to penalize for walking over keys, so the algorithm
+	 * will just waltz over the keys. No biggie.
+	 */
 	private static int distanceTo(MapPoint point)
 	{
 		if(point.getType() == BoxType.Door)
@@ -163,10 +173,16 @@ public class BFSearch
 			return 1;
 	}
 	
+	/*
+	 * Since java's standard library does not have a nice implementation of
+	 * a tree map sorted on it's values, this is a quick helper function to
+	 * get the sorted g score in a g-score-map.
+	 */
 	private static Entry<MapPath, Integer> getShortestPath(
 			Map<MapPath, Integer> gScoreMap)
 	{
-		Iterator<Entry<MapPath, Integer>> iter = gScoreMap.entrySet().iterator();
+		Iterator<Entry<MapPath, Integer>> iter = gScoreMap.entrySet()
+				.iterator();
 		Entry<MapPath, Integer> minEntry = iter.next();
 		Integer min = minEntry.getValue();
 		while(iter.hasNext())
@@ -182,7 +198,12 @@ public class BFSearch
 		return minEntry;
 	}
 	
-	private static Iterable<MapPoint> getNeighbors(MapPoint point, BoxType dest, int keyCount)
+	/*
+	 * Gets the neighbors of a point disregarding points that cannot be
+	 * reached.
+	 */
+	private static Iterable<MapPoint> getNeighbors(MapPoint point,
+			BoxType dest, int keyCount)
 	{
 		Collection<MapPoint> neighbors = new HashSet<>(4);
 		for(MapPoint neighbor : point.getNeighbors())
