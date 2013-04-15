@@ -4,11 +4,13 @@ import com.csc2013.DungeonMaze.Action;
 import com.csc2013.DungeonMaze.BoxType;
 
 /**
- * 
- * [To be completed by students]
+ * Westhill's SchoolPlayer implementation with that nice GUI.
  * 
  * @author [Westhill/NullPointerException]
- * 
+ * @see <a href="https://github.com/qxu/ge-cs-2013">GitHub final version
+ *      (seperate classes, includes debugger)</a>
+ * @see <a href="https://github.com/qxu/ge-cs-2013-oneclass">GitHub one-class
+ *      version (everything is in one SchoolPlayer.java class)</a>
  */
 public class SchoolPlayer
 {
