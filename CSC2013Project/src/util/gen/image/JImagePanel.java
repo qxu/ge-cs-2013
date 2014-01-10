@@ -6,23 +6,19 @@ import java.awt.Image;
 
 import javax.swing.JPanel;
 
-public class JImagePanel extends JPanel
-{
+public class JImagePanel extends JPanel {
 	private Image image;
 
-	public JImagePanel()
-	{
+	public JImagePanel() {
 		super();
 	}
 
-	public JImagePanel(Image image)
-	{
+	public JImagePanel(Image image) {
 		this();
 		setImage(image);
 	}
 
-	public void setImage(Image image)
-	{
+	public void setImage(Image image) {
 		this.image = image;
 		int width = this.image.getWidth(null);
 		int height = this.image.getHeight(null);
@@ -32,11 +28,9 @@ public class JImagePanel extends JPanel
 	}
 
 	@Override
-	public void paintComponent(Graphics g)
-	{
+	public void paintComponent(Graphics g) {
 		Image image = this.image;
-		if(image != null)
-		{
+		if (image != null) {
 			g.drawImage(image, 0, 0, null);
 		}
 	}
